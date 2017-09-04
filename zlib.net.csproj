@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
+    <Copyright>Copyright © 2006, ComponentAce</Copyright>
+    <AssemblyTitle>zlib.net</AssemblyTitle>
+    <VersionPrefix>1.0.4</VersionPrefix>
+    <Authors>Jean-loup Gailly;Mark Adler;ComponentAce;Eugene Bekker</Authors>
+    <TargetFrameworks>netstandard1.6;netstandard2.0;netcoreapp1.1;netcoreapp2.0;net40;net45;net461;net47</TargetFrameworks>
+    <DebugType>portable</DebugType>
+    <AssemblyName>zlib.net</AssemblyName>
+    <PackageId>zlib.net</PackageId>
+    <PackageTags>zlib;deflate;compression</PackageTags>
+    <PackageProjectUrl>https://github.com/cinderblocks/zlib.net</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/cinderblocks/zlib.net/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/cinderblocks/zlib.net.git</RepositoryUrl>
+    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove=".gitignore" />
+    <None Remove="LICENSE" />
+    <None Remove="README.md" />
+  </ItemGroup>
+</Project>
