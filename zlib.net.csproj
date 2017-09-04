@@ -9,7 +9,7 @@
     <TargetFrameworks>netstandard1.6;netstandard2.0;netcoreapp1.1;netcoreapp2.0;net40;net45;net461;net47</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>zlib.net</AssemblyName>
-    <PackageId>zlib.net</PackageId>
+    <PackageId>zlib.net-mutliplatform</PackageId>
     <PackageTags>zlib;deflate;compression</PackageTags>
     <PackageProjectUrl>https://github.com/cinderblocks/zlib.net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/cinderblocks/zlib.net/blob/master/LICENSE</PackageLicenseUrl>

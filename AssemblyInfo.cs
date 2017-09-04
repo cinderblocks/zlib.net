@@ -7,11 +7,11 @@ using System.Runtime.CompilerServices;
 // associated with an assembly.
 //
 [assembly: AssemblyTitle("ZLIB.NET")]
-[assembly: AssemblyDescription("ZLIB.NET")]
+[assembly: AssemblyDescription("zlib.net")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("ComponentAce")]
-[assembly: AssemblyProduct("ZLIB.NET")]
-[assembly: AssemblyCopyright("ComponentAce")]
+[assembly: AssemblyProduct("zlib.net")]
+[assembly: AssemblyCopyright("Copyright (c) 2006-2007, ComponentAce")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]		
 
