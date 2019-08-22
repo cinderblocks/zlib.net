@@ -1,20 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
     <Copyright>Copyright © 2006, ComponentAce</Copyright>
     <AssemblyTitle>zlib.net</AssemblyTitle>
-    <VersionPrefix>1.0.4</VersionPrefix>
-    <Authors>Jean-loup Gailly;Mark Adler;ComponentAce;Eugene Bekker</Authors>
+    <VersionPrefix>1.0.5</VersionPrefix>
+    <Authors>Jean-loup Gailly;Mark Adler;ComponentAce;Eugene Bekker;Georg Dangl</Authors>
     <TargetFrameworks>netstandard1.6;netstandard2.0;netcoreapp1.1;netcoreapp2.0;net40;net45;net461;net47</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>zlib.net</AssemblyName>
-    <PackageId>zlib.net-mutliplatform</PackageId>
+    <PackageId>zlib.net-mutliplatform.Signed</PackageId>
     <PackageTags>zlib;deflate;compression</PackageTags>
-    <PackageProjectUrl>https://github.com/cinderblocks/zlib.net</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/cinderblocks/zlib.net/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/GeorgDangl/zlib.net</PackageProjectUrl>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/cinderblocks/zlib.net.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/GeorgDangl/zlib.net.git</RepositoryUrl>
     <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -24,6 +24,8 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>zlib.net.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
