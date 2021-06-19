@@ -6,13 +6,13 @@
     <AssemblyTitle>zlib.net</AssemblyTitle>
     <VersionPrefix>1.0.4</VersionPrefix>
     <Authors>Jean-loup Gailly;Mark Adler;ComponentAce;Eugene Bekker</Authors>
-    <TargetFrameworks>netstandard1.6;netstandard2.0;netcoreapp1.1;netcoreapp2.0;net40;net45;net461;net47</TargetFrameworks>
+    <TargetFrameworks>netstandard1.6;netstandard2.0;netcoreapp2.1;netcoreapp3.1;net40;net45;net461;net47;net48;net5.0</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>zlib.net</AssemblyName>
     <PackageId>zlib.net-mutliplatform</PackageId>
     <PackageTags>zlib;deflate;compression</PackageTags>
     <PackageProjectUrl>https://github.com/cinderblocks/zlib.net</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/cinderblocks/zlib.net/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicense>https://github.com/cinderblocks/zlib.net/blob/master/LICENSE</PackageLicense>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/cinderblocks/zlib.net.git</RepositoryUrl>
     <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
