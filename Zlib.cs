@@ -41,11 +41,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
 * and contributors of zlib.
 */
-using System;
+
 namespace ComponentAce.Compression.Libs.zlib
 {
 	
-	sealed public class zlibConst
+	public sealed class zlibConst
 	{
 		private const System.String version_Renamed_Field = "1.0.2";
 		public static System.String version()

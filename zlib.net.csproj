@@ -1,34 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
-    <Copyright>Copyright © 2006, ComponentAce</Copyright>
-    <AssemblyTitle>zlib.net</AssemblyTitle>
-    <VersionPrefix>1.0.4</VersionPrefix>
-    <Authors>Jean-loup Gailly;Mark Adler;ComponentAce;Eugene Bekker</Authors>
-    <TargetFrameworks>netstandard1.6;netstandard2.0;netcoreapp2.1;netcoreapp3.1;net40;net45;net461;net47;net48;net5.0</TargetFrameworks>
+	<PackageId>zlib.net-mutliplatform</PackageId>
+	<Product>zlib.net</Product>
+	<Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
+	<Copyright>Copyright © 2006-2007, ComponentAce</Copyright>
+	<AssemblyTitle>zlib.net</AssemblyTitle>
+	<Version>1.0.6</Version>
+	<Company>ComponentAce</Company>
+    <Authors>cinderblocks</Authors>
+    <TargetFrameworks>netstandard1.6;netstandard2.0;netcoreapp2.1;netcoreapp3.1;net40;net45;net461;net47;net48;net5.0;net6.0</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>zlib.net</AssemblyName>
-    <PackageId>zlib.net-mutliplatform</PackageId>
-    <PackageTags>zlib;deflate;compression</PackageTags>
+	<PackageTags>zlib;deflate;compression</PackageTags>
+	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/cinderblocks/zlib.net</PackageProjectUrl>
-    <PackageLicense>https://github.com/cinderblocks/zlib.net/blob/master/LICENSE</PackageLicense>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/cinderblocks/zlib.net.git</RepositoryUrl>
-    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
-
   <ItemGroup>
-    <None Remove=".gitignore" />
-    <None Remove="LICENSE" />
-    <None Remove="README.md" />
+	<None Include="README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>

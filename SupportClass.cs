@@ -1,7 +1,4 @@
 
-using System;
-
-
 namespace ComponentAce.Compression.Libs.zlib
 {
 	public class SupportClass
@@ -65,7 +62,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		/// Performs an unsigned bitwise right shift with the specified number
 		/// </summary>
 		/// <param name="number">Number to operate on</param>
-		/// <param name="bits">Ammount of bits to shift</param>
+		/// <param name="bits">Amount of bits to shift</param>
 		/// <returns>The resulting number from the shift operation</returns>
 		public static int URShift(int number, long bits)
 		{
@@ -76,7 +73,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		/// Performs an unsigned bitwise right shift with the specified number
 		/// </summary>
 		/// <param name="number">Number to operate on</param>
-		/// <param name="bits">Ammount of bits to shift</param>
+		/// <param name="bits">Amount of bits to shift</param>
 		/// <returns>The resulting number from the shift operation</returns>
 		public static long URShift(long number, int bits)
 		{
@@ -90,7 +87,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		/// Performs an unsigned bitwise right shift with the specified number
 		/// </summary>
 		/// <param name="number">Number to operate on</param>
-		/// <param name="bits">Ammount of bits to shift</param>
+		/// <param name="bits">Amount of bits to shift</param>
 		/// <returns>The resulting number from the shift operation</returns>
 		public static long URShift(long number, long bits)
 		{
@@ -100,7 +97,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		/*******************************/
 		/// <summary>Reads a number of characters from the current source Stream and writes the data to the target array at the specified index.</summary>
 		/// <param name="sourceStream">The source Stream to read from.</param>
-		/// <param name="target">Contains the array of characteres read from the source Stream.</param>
+		/// <param name="target">Contains the array of characters read from the source Stream.</param>
 		/// <param name="start">The starting index of the target array.</param>
 		/// <param name="count">The maximum number of characters to read from the source Stream.</param>
 		/// <returns>The number of characters read. The number will be less than or equal to count depending on the data available in the source Stream. Returns -1 if the end of the stream is reached.</returns>
@@ -125,7 +122,7 @@ namespace ComponentAce.Compression.Libs.zlib
 
 		/// <summary>Reads a number of characters from the current source TextReader and writes the data to the target array at the specified index.</summary>
 		/// <param name="sourceTextReader">The source TextReader to read from</param>
-		/// <param name="target">Contains the array of characteres read from the source TextReader.</param>
+		/// <param name="target">Contains the array of characters read from the source TextReader.</param>
 		/// <param name="start">The starting index of the target array.</param>
 		/// <param name="count">The maximum number of characters to read from the source TextReader.</param>
 		/// <returns>The number of characters read. The number will be less than or equal to count depending on the data available in the source TextReader. Returns -1 if the end of the stream is reached.</returns>

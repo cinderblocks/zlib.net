@@ -53,37 +53,17 @@ namespace ComponentAce.Compression.Libs.zlib
             flush_Renamed_Field = zlibConst.Z_NO_FLUSH;
             buf = new byte[bufsize];
         }
-        virtual public int FlushMode
+        public virtual int FlushMode
         {
-            get
-            {
-                return (flush_Renamed_Field);
-            }
+            get => (flush_Renamed_Field);
 
-            set
-            {
-                this.flush_Renamed_Field = value;
-            }
-
+            set => this.flush_Renamed_Field = value;
         }
         /// <summary> Returns the total number of bytes input so far.</summary>
-        virtual public long TotalIn
-        {
-            get
-            {
-                return z.total_in;
-            }
+        public virtual long TotalIn => z.total_in;
 
-        }
         /// <summary> Returns the total number of bytes output so far.</summary>
-        virtual public long TotalOut
-        {
-            get
-            {
-                return z.total_out;
-            }
-
-        }
+        public virtual long TotalOut => z.total_out;
 
         protected internal ZStream z = new ZStream();
         protected internal int bufsize = 4096;
@@ -135,10 +115,7 @@ namespace ComponentAce.Compression.Libs.zlib
                 z.next_out = buf;
                 z.next_out_index = 0;
                 z.avail_out = bufsize;
-                if (compress)
-                    err = z.deflate(flush_Renamed_Field);
-                else
-                    err = z.inflate(flush_Renamed_Field);
+                err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
                 if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
                     throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
                 out_Renamed.Write(buf, 0, bufsize - z.avail_out);
@@ -154,14 +131,7 @@ namespace ComponentAce.Compression.Libs.zlib
                 z.next_out = buf;
                 z.next_out_index = 0;
                 z.avail_out = bufsize;
-                if (compress)
-                {
-                    err = z.deflate(zlibConst.Z_FINISH);
-                }
-                else
-                {
-                    err = z.inflate(zlibConst.Z_FINISH);
-                }
+                err = compress ? z.deflate(zlibConst.Z_FINISH) : z.inflate(zlibConst.Z_FINISH);
                 if (err != zlibConst.Z_STREAM_END && err != zlibConst.Z_OK)
                     throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
                 if (bufsize - z.avail_out > 0)
@@ -236,48 +206,20 @@ namespace ComponentAce.Compression.Libs.zlib
             return 0;
         }
         //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Boolean CanRead
-        {
-            get
-            {
-                return false;
-            }
+        public override System.Boolean CanRead => false;
 
-        }
         //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Boolean CanSeek
-        {
-            get
-            {
-                return false;
-            }
+        public override System.Boolean CanSeek => false;
 
-        }
-        
-        public override System.Boolean CanWrite
-        {
-            get
-            {
-                return true;
-            }
+        public override System.Boolean CanWrite => true;
 
-        }
         //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Int64 Length
-        {
-            get
-            {
-                return 0;
-            }
+        public override System.Int64 Length => 0;
 
-        }
         //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
         public override System.Int64 Position
         {
-            get
-            {
-                return 0;
-            }
+            get => 0;
 
             set
             {

@@ -172,8 +172,8 @@ namespace ComponentAce.Compression.Libs.zlib
 								write = q;
 								return inflate_flush(z, r);
 							}
-							;
-							n--;
+
+                            n--;
 							b |= (z.next_in[p++] & 0xff) << k;
 							k += 8;
 						}
@@ -254,7 +254,6 @@ namespace ComponentAce.Compression.Libs.zlib
 								write = q;
 								return inflate_flush(z, r);
 							}
-							;
 							n--;
 							b |= (z.next_in[p++] & 0xff) << k;
 							k += 8;
@@ -340,7 +339,6 @@ namespace ComponentAce.Compression.Libs.zlib
 								write = q;
 								return inflate_flush(z, r);
 							}
-							;
 							n--;
 							b |= (z.next_in[p++] & 0xff) << k;
 							k += 8;
@@ -386,7 +384,6 @@ namespace ComponentAce.Compression.Libs.zlib
 									write = q;
 									return inflate_flush(z, r);
 								}
-								;
 								n--;
 								b |= (z.next_in[p++] & 0xff) << k;
 								k += 8;
@@ -453,7 +450,6 @@ namespace ComponentAce.Compression.Libs.zlib
 									write = q;
 									return inflate_flush(z, r);
 								}
-								;
 								n--;
 								b |= (z.next_in[p++] & 0xff) << k;
 								k += 8;
@@ -492,7 +488,6 @@ namespace ComponentAce.Compression.Libs.zlib
 										write = q;
 										return inflate_flush(z, r);
 									}
-									;
 									n--;
 									b |= (z.next_in[p++] & 0xff) << k;
 									k += 8;

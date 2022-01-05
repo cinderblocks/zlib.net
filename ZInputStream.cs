@@ -41,7 +41,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
 * and contributors of zlib.
 */
-using System;
+
 namespace ComponentAce.Compression.Libs.zlib
 {
 	
@@ -52,39 +52,19 @@ namespace ComponentAce.Compression.Libs.zlib
 			flush = zlibConst.Z_NO_FLUSH;
 			buf = new byte[bufsize];
 		}
-		virtual public int FlushMode
+		public virtual int FlushMode
 		{
-			get
-			{
-				return (flush);
-			}
-			
-			set
-			{
-				this.flush = value;
-			}
-			
-		}
+			get => (flush);
+
+            set => this.flush = value;
+        }
 		/// <summary> Returns the total number of bytes input so far.</summary>
-		virtual public long TotalIn
-		{
-			get
-			{
-				return z.total_in;
-			}
-			
-		}
-		/// <summary> Returns the total number of bytes output so far.</summary>
-		virtual public long TotalOut
-		{
-			get
-			{
-				return z.total_out;
-			}
-			
-		}
-		
-		protected ZStream z = new ZStream();
+		public virtual long TotalIn => z.total_in;
+
+        /// <summary> Returns the total number of bytes output so far.</summary>
+		public virtual long TotalOut => z.total_out;
+
+        protected ZStream z = new ZStream();
 		protected int bufsize = 512;		
 		protected int flush;		
 		protected byte[] buf, buf1 = new byte[1];
@@ -148,10 +128,7 @@ namespace ComponentAce.Compression.Libs.zlib
 						nomoreinput = true;
 					}
 				}
-				if (compress)
-					err = z.deflate(flush);
-				else
-					err = z.inflate(flush);
+				err = compress ? z.deflate(flush) : z.inflate(flush);
 				if (nomoreinput && (err == zlibConst.Z_BUF_ERROR))
 					return (- 1);
 				if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
