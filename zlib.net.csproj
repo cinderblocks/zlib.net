@@ -8,7 +8,7 @@
 	<Version>1.0.6</Version>
 	<Company>ComponentAce</Company>
     <Authors>cinderblocks</Authors>
-    <TargetFrameworks>netstandard1.6;netstandard2.0;netcoreapp2.1;netcoreapp3.1;net40;net45;net461;net47;net48;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard1.6;netstandard2.0</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>zlib.net</AssemblyName>
 	<PackageTags>zlib;deflate;compression</PackageTags>
