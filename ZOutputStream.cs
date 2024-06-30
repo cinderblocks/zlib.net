@@ -169,13 +169,10 @@ namespace ComponentAce.Compression.Libs.zlib
             {
                 try
                 {
-                    try
-                    {
-                        finish();
-                    }
-                    catch
-                    {
-                    }
+                    finish();
+                }
+                catch
+                {
                 }
                 finally
                 {
