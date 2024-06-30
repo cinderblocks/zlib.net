@@ -44,7 +44,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 namespace ComponentAce.Compression.Libs.zlib
 {
-	internal sealed class InfTree
+	internal static class InfTree
 	{
 		
 		private const int MANY = 1440;

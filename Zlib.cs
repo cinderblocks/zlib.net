@@ -45,7 +45,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ComponentAce.Compression.Libs.zlib
 {
 	
-	public sealed class zlibConst
+	public static class zlibConst
 	{
 		private const System.String version_Renamed_Field = "1.0.2";
 		public static System.String version()

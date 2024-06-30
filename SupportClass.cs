@@ -1,7 +1,7 @@
 
 namespace ComponentAce.Compression.Libs.zlib
 {
-	public class SupportClass
+	public static class SupportClass
 	{
 		/// <summary>
 		/// This method returns the literal value received
@@ -150,7 +150,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		/// <returns>The new array of bytes</returns>
 		public static byte[] ToByteArray(System.String sourceString)
 		{
-			return System.Text.UTF8Encoding.UTF8.GetBytes(sourceString);
+			return System.Text.Encoding.UTF8.GetBytes(sourceString);
 		}
 
 		/// <summary>
@@ -160,7 +160,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		/// <returns>The new array of chars</returns>
 		public static char[] ToCharArray(byte[] byteArray) 
 		{
-			return System.Text.UTF8Encoding.UTF8.GetChars(byteArray);
+			return System.Text.Encoding.UTF8.GetChars(byteArray);
 		}
 
 
