@@ -47,7 +47,7 @@ namespace ComponentAce.Compression.Libs.zlib
 	internal sealed class InfCodes
 	{
 				
-		private static readonly int[] inflate_mask = new int[]{0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff};
+		private static readonly int[] inflate_mask = {0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff};
 		
 		private const int Z_OK = 0;
 		private const int Z_STREAM_END = 1;
@@ -536,7 +536,7 @@ namespace ComponentAce.Compression.Libs.zlib
 					if ((e & 16) != 0)
 					{
 						e &= 15;
-						c = tp[(tp_index + t) * 3 + 2] + ((int) b & inflate_mask[e]);
+						c = tp[(tp_index + t) * 3 + 2] + (b & inflate_mask[e]);
 						
 						b >>= e; k -= e;
 						

@@ -57,7 +57,7 @@ namespace ComponentAce.Compression.Libs.zlib
         {
             get => (flush_Renamed_Field);
 
-            set => this.flush_Renamed_Field = value;
+            set => flush_Renamed_Field = value;
         }
         /// <summary> Returns the total number of bytes input so far.</summary>
         public virtual long TotalIn => z.total_in;
@@ -97,16 +97,16 @@ namespace ComponentAce.Compression.Libs.zlib
         //UPGRADE_TODO: The differences in the Expected value  of parameters for method 'WriteByte'  may cause compilation errors.  'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1092_3"'
         public override void WriteByte(byte b)
         {
-            WriteByte((int)b);
+            WriteByte(b);
         }
 
-        public override void Write(System.Byte[] b1, int off, int len)
+        public override void Write(Byte[] b1, int off, int len)
         {
             if (len == 0)
                 return;
             int err;
             byte[] b = new byte[b1.Length];
-            System.Array.Copy(b1, 0, b, 0, b1.Length);
+            Array.Copy(b1, 0, b, 0, b1.Length);
             z.next_in = b;
             z.next_in_index = off;
             z.avail_in = len;
@@ -188,32 +188,32 @@ namespace ComponentAce.Compression.Libs.zlib
             out_Renamed.Flush();
         }
         //UPGRADE_TODO: The following method was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Int32 Read(System.Byte[] buffer, System.Int32 offset, System.Int32 count)
+        public override Int32 Read(Byte[] buffer, Int32 offset, Int32 count)
         {
             return 0;
         }
         //UPGRADE_TODO: The following method was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override void SetLength(System.Int64 value)
+        public override void SetLength(Int64 value)
         {
         }
         //UPGRADE_TODO: The following method was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Int64 Seek(System.Int64 offset, System.IO.SeekOrigin origin)
+        public override Int64 Seek(Int64 offset, System.IO.SeekOrigin origin)
         {
             return 0;
         }
         //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Boolean CanRead => false;
+        public override Boolean CanRead => false;
 
         //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Boolean CanSeek => false;
+        public override Boolean CanSeek => false;
 
-        public override System.Boolean CanWrite => true;
-
-        //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Int64 Length => 0;
+        public override Boolean CanWrite => true;
 
         //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override System.Int64 Position
+        public override Int64 Length => 0;
+
+        //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
+        public override Int64 Position
         {
             get => 0;
 

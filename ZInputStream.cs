@@ -56,7 +56,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			get => (flush);
 
-            set => this.flush = value;
+            set => flush = value;
         }
 		/// <summary> Returns the total number of bytes input so far.</summary>
 		public virtual long TotalIn => z.total_in;
@@ -147,7 +147,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			if (n < len)
 				len = (int) n;
 			byte[] tmp = new byte[len];
-			return ((long) SupportClass.ReadInput(BaseStream, tmp, 0, tmp.Length));
+			return SupportClass.ReadInput(BaseStream, tmp, 0, tmp.Length);
 		}
 
 		protected override void Dispose(bool disposing)

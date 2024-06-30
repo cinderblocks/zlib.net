@@ -77,7 +77,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		private const int SLOW = 2;
 		private static Config[] config_table;
 				
-		private static readonly System.String[] z_errmsg = new System.String[]{"need dictionary", "stream end", "", "file error", "stream error", "data error", "insufficient memory", "buffer error", "incompatible version", ""};
+		private static readonly String[] z_errmsg = {"need dictionary", "stream end", "", "file error", "stream error", "data error", "insufficient memory", "buffer error", "incompatible version", ""};
 		
 		// block not completed, need more input or more output
 		private const int NeedMore = 0;
@@ -321,10 +321,10 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 			
 			// Set the default configuration parameters:
-			max_lazy_match = Deflate.config_table[level].max_lazy;
-			good_match = Deflate.config_table[level].good_length;
-			nice_match = Deflate.config_table[level].nice_length;
-			max_chain_length = Deflate.config_table[level].max_chain;
+			max_lazy_match = config_table[level].max_lazy;
+			good_match = config_table[level].good_length;
+			nice_match = config_table[level].nice_length;
+			max_chain_length = config_table[level].max_chain;
 			
 			strstart = 0;
 			block_start = 0;
@@ -607,7 +607,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		internal void  send_bits(int value_Renamed, int length)
 		{
 			int len = length;
-			if (bi_valid > (int) Buf_size - len)
+			if (bi_valid > Buf_size - len)
 			{
 				int val = value_Renamed;
 				//      bi_buf |= (val << bi_valid);
@@ -686,7 +686,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				int dcode;
 				for (dcode = 0; dcode < D_CODES; dcode++)
 				{
-					out_length = (int) (out_length + (int) dyn_dtree[dcode * 2] * (5L + Tree.extra_dbits[dcode]));
+					out_length = (int) (out_length + dyn_dtree[dcode * 2] * (5L + Tree.extra_dbits[dcode]));
 				}
 				out_length = SupportClass.URShift(out_length, 3);
 				if ((matches < (last_lit / 2)) && out_length < in_length / 2)
@@ -877,8 +877,8 @@ namespace ComponentAce.Compression.Libs.zlib
 				if (strstart == 0 || strstart >= max_start)
 				{
 					// strstart == 0 is possible when wraparound on 16-bit machine
-					lookahead = (int) (strstart - max_start);
-					strstart = (int) max_start;
+					lookahead = strstart - max_start;
+					strstart = max_start;
 					
 					flush_block_only(false);
 					if (strm.avail_out == 0)
@@ -1408,7 +1408,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				}
 				while (window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && scan < strend);
 				
-				len = MAX_MATCH - (int) (strend - scan);
+				len = MAX_MATCH - (strend - scan);
 				scan = strend - MAX_MATCH;
 				
 				if (len > best_len)
@@ -1464,7 +1464,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				return Z_STREAM_ERROR;
 			}
 			
-			strm.dstate = (Deflate) this;
+			strm.dstate = this;
 			
 			this.noheader = noheader;
 			w_bits = windowBits;
@@ -1708,10 +1708,6 @@ namespace ComponentAce.Compression.Libs.zlib
 					case SLOW: 
 						bstate = deflate_slow(flush);
 						break;
-					
-					default: 
-						break;
-					
 				}
 				
 				if (bstate == FinishStarted || bstate == FinishDone)
