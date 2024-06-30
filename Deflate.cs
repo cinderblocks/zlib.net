@@ -1192,10 +1192,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			flush_block_only(flush == Z_FINISH);
 			if (strm.avail_out == 0)
 			{
-				if (flush == Z_FINISH)
-					return FinishStarted;
-				else
-					return NeedMore;
+				return flush == Z_FINISH ? FinishStarted : NeedMore;
 			}
 			return flush == Z_FINISH?FinishDone:BlockDone;
 		}
@@ -1349,7 +1346,7 @@ namespace ComponentAce.Compression.Libs.zlib
 					return NeedMore;
 			}
 			
-			return flush == Z_FINISH?FinishDone:BlockDone;
+			return flush == Z_FINISH ? FinishDone : BlockDone;
 		}
 		
 		internal int longest_match(int cur_match)
