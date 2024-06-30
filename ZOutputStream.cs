@@ -73,7 +73,7 @@ namespace ComponentAce.Compression.Libs.zlib
 
         private System.IO.Stream out_Renamed;
 
-        public ZOutputStream(System.IO.Stream out_Renamed) : base()
+        public ZOutputStream(System.IO.Stream out_Renamed)
         {
             InitBlock();
             this.out_Renamed = out_Renamed;
@@ -81,7 +81,7 @@ namespace ComponentAce.Compression.Libs.zlib
             compress = false;
         }
 
-        public ZOutputStream(System.IO.Stream out_Renamed, int level) : base()
+        public ZOutputStream(System.IO.Stream out_Renamed, int level)
         {
             InitBlock();
             this.out_Renamed = out_Renamed;

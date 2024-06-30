@@ -48,7 +48,7 @@ namespace ComponentAce.Compression.Libs.zlib
 	
 	public class ZStreamException:System.IO.IOException
 	{
-		public ZStreamException():base()
+		public ZStreamException()
 		{
 		}
 		public ZStreamException(System.String s):base(s)
