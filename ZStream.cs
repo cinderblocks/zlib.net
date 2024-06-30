@@ -103,7 +103,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			if (istate == null)
 				return Z_STREAM_ERROR;
-			return istate.inflate(this, f);
+			return Inflate.inflate(this, f);
 		}
 		public int inflateEnd()
 		{
@@ -123,7 +123,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			if (istate == null)
 				return Z_STREAM_ERROR;
-			return istate.inflateSetDictionary(this, dictionary, dictLength);
+			return Inflate.inflateSetDictionary(this, dictionary, dictLength);
 		}
 		
 		public int deflateInit(int level)
@@ -214,7 +214,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			if (dstate.noheader == 0)
 			{
-				adler = _adler.adler32(adler, next_in, next_in_index, len);
+				adler = Adler32.adler32(adler, next_in, next_in_index, len);
 			}
 			Array.Copy(next_in, next_in_index, buf, start, len);
 			next_in_index += len;

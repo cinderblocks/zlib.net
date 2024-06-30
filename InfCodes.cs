@@ -468,7 +468,8 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 		}
 		
-		internal void  free(ZStream z)
+		// *TODO: What is going on here?
+		internal void free(ZStream z)
 		{
 			//  ZFREE(z, c);
 		}
@@ -478,7 +479,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// at least ten.  The ten bytes are six bytes for the longest length/
 		// distance pair plus four bytes for overloading the bit buffer.
 		
-		internal int inflate_fast(int bl, int bd, int[] tl, int tl_index, int[] td, int td_index, InfBlocks s, ZStream z)
+		internal static int inflate_fast(int bl, int bd, int[] tl, int tl_index, int[] td, int td_index, InfBlocks s, ZStream z)
 		{
 			int t; // temporary pointer
 			int[] tp; // temporary pointer

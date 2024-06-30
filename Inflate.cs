@@ -103,7 +103,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		internal InfBlocks blocks; // current inflate_blocks state
 		
-		internal int inflateReset(ZStream z)
+		internal static int inflateReset(ZStream z)
 		{
 			if (z == null || z.istate == null)
 				return Z_STREAM_ERROR;
@@ -152,7 +152,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			return Z_OK;
 		}
 		
-		internal int inflate(ZStream z, int f)
+		internal static int inflate(ZStream z, int f)
 		{
 			int r;
 			int b;
@@ -351,19 +351,19 @@ namespace ComponentAce.Compression.Libs.zlib
 		}
 		
 		
-		internal int inflateSetDictionary(ZStream z, byte[] dictionary, int dictLength)
+		internal static int inflateSetDictionary(ZStream z, byte[] dictionary, int dictLength)
 		{
 			int index = 0;
 			int length = dictLength;
 			if (z == null || z.istate == null || z.istate.mode != DICT0)
 				return Z_STREAM_ERROR;
 			
-			if (z._adler.adler32(1L, dictionary, 0, dictLength) != z.adler)
+			if (Adler32.adler32(1L, dictionary, 0, dictLength) != z.adler)
 			{
 				return Z_DATA_ERROR;
 			}
 			
-			z.adler = z._adler.adler32(0, null, 0, 0);
+			z.adler = Adler32.adler32(0, null, 0, 0);
 			
 			if (length >= (1 << z.istate.wbits))
 			{

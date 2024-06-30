@@ -125,13 +125,12 @@ namespace ComponentAce.Compression.Libs.zlib
 
         public virtual void finish()
         {
-            int err;
             do
             {
                 z.next_out = buf;
                 z.next_out_index = 0;
                 z.avail_out = bufsize;
-                err = compress ? z.deflate(zlibConst.Z_FINISH) : z.inflate(zlibConst.Z_FINISH);
+                int err = compress ? z.deflate(zlibConst.Z_FINISH) : z.inflate(zlibConst.Z_FINISH);
                 if (err != zlibConst.Z_STREAM_END && err != zlibConst.Z_OK)
                     throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
                 if (bufsize - z.avail_out > 0)
