@@ -3,9 +3,9 @@
 	<PackageId>zlib.net-mutliplatform</PackageId>
 	<Product>zlib.net</Product>
 	<Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
-	<Copyright>Copyright © 2006-2007, ComponentAce</Copyright>
+	<Copyright>Copyright © 2006-2007, ComponentAce, 2022-2024 Sjofn LLC</Copyright>
 	<AssemblyTitle>zlib.net</AssemblyTitle>
-	<Version>1.0.6</Version>
+	<Version>1.0.7</Version>
 	<Company>ComponentAce</Company>
     <Authors>cinderblocks</Authors>
     <TargetFrameworks>netstandard1.6;netstandard2.0</TargetFrameworks>
