@@ -220,7 +220,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							return r; r = f;
 						
 						z.avail_in--; z.total_in++;
-						z.istate.need = ((z.next_in[z.next_in_index++] & 0xff) << 24) & unchecked((int) 0xff000000L);
+						z.istate.need = ((long)(z.next_in[z.next_in_index++] & 0xff) << 24) & unchecked((int) 0xff000000L);
 						z.istate.mode = DICT3;
 						goto case DICT3;
 					
@@ -230,7 +230,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							return r; r = f;
 						
 						z.avail_in--; z.total_in++;
-						z.istate.need += (((z.next_in[z.next_in_index++] & 0xff) << 16) & 0xff0000L);
+						z.istate.need += ((long)((z.next_in[z.next_in_index++] & 0xff) << 16) & 0xff0000L);
 						z.istate.mode = DICT2;
 						goto case DICT2;
 					
@@ -240,7 +240,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							return r; r = f;
 						
 						z.avail_in--; z.total_in++;
-						z.istate.need += (((z.next_in[z.next_in_index++] & 0xff) << 8) & 0xff00L);
+						z.istate.need += ((long)((z.next_in[z.next_in_index++] & 0xff) << 8) & 0xff00L);
 						z.istate.mode = DICT1;
 						goto case DICT1;
 					
@@ -250,7 +250,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							return r; r = f;
 						
 						z.avail_in--; z.total_in++;
-						z.istate.need += (z.next_in[z.next_in_index++] & 0xffL);
+						z.istate.need += (long)(z.next_in[z.next_in_index++] & 0xffL);
 						z.adler = z.istate.need;
 						z.istate.mode = DICT0;
 						return Z_NEED_DICT;
