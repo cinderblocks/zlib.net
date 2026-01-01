@@ -43,6 +43,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * and contributors of zlib.
 */
 using System;
+using System.IO;
+#if NETSTANDARD2_1_OR_GREATER
+using System.Buffers;
+using System.Threading;
+using System.Threading.Tasks;
+#endif
 namespace ComponentAce.Compression.Libs.zlib
 {
 
@@ -122,6 +128,145 @@ namespace ComponentAce.Compression.Libs.zlib
             }
             while (z.avail_in > 0 || z.avail_out == 0);
         }
+
+#if NETSTANDARD2_1_OR_GREATER
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            if (buffer.Length == 0)
+                return;
+
+            byte[] rentedArray = null;
+            try
+            {
+                rentedArray = ArrayPool<byte>.Shared.Rent(buffer.Length);
+                buffer.CopyTo(rentedArray);
+
+                z.next_in = rentedArray;
+                z.next_in_index = 0;
+                z.avail_in = buffer.Length;
+
+                int err;
+                do
+                {
+                    z.next_out = buf;
+                    z.next_out_index = 0;
+                    z.avail_out = bufsize;
+                    err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
+                    if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
+                        throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
+                    out_Renamed.Write(buf, 0, bufsize - z.avail_out);
+                }
+                while (z.avail_in > 0 || z.avail_out == 0);
+            }
+            finally
+            {
+                if (rentedArray != null)
+                    ArrayPool<byte>.Shared.Return(rentedArray);
+            }
+        }
+
+        public void Write(Span<byte> buffer)
+        {
+            Write((ReadOnlySpan<byte>)buffer);
+        }
+
+        public override async System.Threading.Tasks.Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+        {
+            if (count == 0)
+                return;
+
+            byte[] b = new byte[buffer.Length];
+            Array.Copy(buffer, 0, b, 0, buffer.Length);
+            z.next_in = b;
+            z.next_in_index = offset;
+            z.avail_in = count;
+
+            int err;
+            do
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                z.next_out = buf;
+                z.next_out_index = 0;
+                z.avail_out = bufsize;
+                err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
+                if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
+                    throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
+                await out_Renamed.WriteAsync(buf, 0, bufsize - z.avail_out, cancellationToken).ConfigureAwait(false);
+            }
+            while (z.avail_in > 0 || z.avail_out == 0);
+        }
+
+        public override async System.Threading.Tasks.ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, System.Threading.CancellationToken cancellationToken = default)
+        {
+            if (buffer.Length == 0)
+                return;
+
+            byte[] rentedArray = null;
+            try
+            {
+                rentedArray = ArrayPool<byte>.Shared.Rent(buffer.Length);
+                buffer.CopyTo(rentedArray);
+
+                z.next_in = rentedArray;
+                z.next_in_index = 0;
+                z.avail_in = buffer.Length;
+
+                int err;
+                do
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    z.next_out = buf;
+                    z.next_out_index = 0;
+                    z.avail_out = bufsize;
+                    err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
+                    if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
+                        throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
+                    await out_Renamed.WriteAsync(new ReadOnlyMemory<byte>(buf, 0, bufsize - z.avail_out), cancellationToken).ConfigureAwait(false);
+                }
+                while (z.avail_in > 0 || z.avail_out == 0);
+            }
+            finally
+            {
+                if (rentedArray != null)
+                    ArrayPool<byte>.Shared.Return(rentedArray);
+            }
+        }
+
+        public override async System.Threading.Tasks.Task FlushAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            await out_Renamed.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        public async System.Threading.Tasks.ValueTask FinishAsync(System.Threading.CancellationToken cancellationToken = default)
+        {
+            do
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                z.next_out = buf;
+                z.next_out_index = 0;
+                z.avail_out = bufsize;
+                int err = compress ? z.deflate(zlibConst.Z_FINISH) : z.inflate(zlibConst.Z_FINISH);
+                if (err != zlibConst.Z_STREAM_END && err != zlibConst.Z_OK)
+                    throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
+                if (bufsize - z.avail_out > 0)
+                {
+                    await out_Renamed.WriteAsync(new ReadOnlyMemory<byte>(buf, 0, bufsize - z.avail_out), cancellationToken).ConfigureAwait(false);
+                }
+            }
+            while (z.avail_in > 0 || z.avail_out == 0);
+
+            try
+            {
+                await FlushAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+            }
+        }
+#endif
 
         public virtual void finish()
         {
