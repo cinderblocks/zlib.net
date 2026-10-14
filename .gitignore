@@ -8,3 +8,4 @@ TestResults/
 *.nupkg
 *.snupkg
 artifacts/
+BenchmarkDotNet.Artifacts/

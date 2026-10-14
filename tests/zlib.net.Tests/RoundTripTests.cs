@@ -332,7 +332,8 @@ namespace zlib.net.Tests
             zout.Dispose();
         }
 
-#if NET8_0_OR_GREATER
+// The Span and async overloads exist only in the netstandard2.1 build.
+#if NET8_0_OR_GREATER && !LIB_NETSTANDARD20
         [Fact]
         public void SpanWriteRoundTrips()
         {

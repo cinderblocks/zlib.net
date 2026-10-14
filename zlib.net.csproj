@@ -34,10 +34,15 @@
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
 
     <!-- tests/ lives under this project's folder; keep it (and its bin/obj) out of the library. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**;benchmarks/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="zlib.net.Tests" />
+    <InternalsVisibleTo Include="zlib.net.Benchmarks" />
   </ItemGroup>
 </Project>

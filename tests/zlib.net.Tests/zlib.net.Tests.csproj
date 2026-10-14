@@ -12,7 +12,15 @@
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
-  <ItemGroup>
+  <!-- By default the best-matching asset is used (netstandard2.1 on modern .NET). Pass -p:LibraryTfm=netstandard2.0
+       to run the same tests against the netstandard2.0 build, which is what .NET Framework consumers get. -->
+  <ItemGroup Condition="'$(LibraryTfm)' == ''">
     <ProjectReference Include="..\..\zlib.net.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(LibraryTfm)' == 'netstandard2.0'">
+    <DefineConstants>$(DefineConstants);LIB_NETSTANDARD20</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(LibraryTfm)' != ''">
+    <ProjectReference Include="..\..\zlib.net.csproj" SetTargetFramework="TargetFramework=$(LibraryTfm)" />
   </ItemGroup>
 </Project>
