@@ -68,7 +68,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			uint s1 = (uint) adler & 0xffff;
 			uint s2 = (uint) (adler >> 16) & 0xffff;
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
 			if (len >= VectorThreshold && System.Numerics.Vector.IsHardwareAccelerated)
 			{
 				AdlerVector(buf, ref index, ref len, ref s1, ref s2);
@@ -116,7 +116,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		}
 		
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
 		private const int VectorThreshold = 128;
 
 		// Weights W, W-1, ..., 1 for the bytes of one vector, split into the four uint vectors that widening produces.

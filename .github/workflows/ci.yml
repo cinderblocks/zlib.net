@@ -34,7 +34,9 @@ jobs:
           dotnet-version: 8.0.x
       # Windows additionally runs the net48 test target against the netstandard2.0 build.
       - run: dotnet test zlib.net.sln --configuration Release
-      # The same tests again, against the netstandard2.0 build (the one .NET Framework consumers get).
+      # The same tests again against the other builds: netstandard2.1 (older .NET Core and Xamarin/Unity) and
+      # netstandard2.0 (the one .NET Framework consumers get). The default run above uses the net8.0 build.
+      - run: dotnet test tests/zlib.net.Tests --configuration Release -p:LibraryTfm=netstandard2.1
       - run: dotnet test tests/zlib.net.Tests --configuration Release -p:LibraryTfm=netstandard2.0
 
   pack:

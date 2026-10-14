@@ -44,7 +44,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 using System;
 using System.IO;
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
 using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
@@ -151,7 +151,7 @@ namespace ComponentAce.Compression.Libs.zlib
             while (z.avail_in > 0 || z.avail_out == 0);
         }
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
         // Large inputs are fed through a bounded pooled buffer instead of renting one as big as the input.
         private const int SpanChunkSize = 16 * 1024;
 

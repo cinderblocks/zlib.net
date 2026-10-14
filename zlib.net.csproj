@@ -9,7 +9,7 @@
     <Version>2.0.0</Version>
     <Company>ComponentAce</Company>
     <Authors>cinderblocks</Authors>
-    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>zlib.net</AssemblyName>
     <PackageTags>zlib;deflate;compression</PackageTags>
@@ -26,6 +26,12 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <DefaultItemExcludes>$(DefaultItemExcludes);tests/**;benchmarks/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <!-- Pure managed code, so the modern target can promise trimming and Native AOT compatibility. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>

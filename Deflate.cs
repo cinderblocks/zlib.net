@@ -984,7 +984,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		private static void Slide(short[] table, int n, int w_size)
 		{
 			int i = 0;
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
 			if (System.Numerics.Vector.IsHardwareAccelerated)
 			{
 				var floor = new System.Numerics.Vector<ushort>((ushort) w_size);
