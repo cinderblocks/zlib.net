@@ -20,6 +20,8 @@
     <RepositoryUrl>https://github.com/cinderblocks/zlib.net.git</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>zlib.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <EnablePackageValidation>true</EnablePackageValidation>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
