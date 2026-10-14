@@ -20,6 +20,8 @@
 	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   <IncludeSymbols>true</IncludeSymbols>
   <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  <SignAssembly>True</SignAssembly>
+  <AssemblyOriginatorKeyFile>zlib.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
 	<None Include="README.md" Pack="true" PackagePath="" />
