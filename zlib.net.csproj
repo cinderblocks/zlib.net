@@ -1,32 +1,43 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-	<PackageId>zlib.net-mutliplatform</PackageId>
-	<Product>zlib.net</Product>
-	<Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
-	<Copyright>Copyright © 2006-2007, ComponentAce, 2022-2025 Sjofn LLC</Copyright>
-	<AssemblyTitle>zlib.net</AssemblyTitle>
-	<Version>1.1.0</Version>
-	<Company>ComponentAce</Company>
-  <Authors>cinderblocks</Authors>
-  <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-  <DebugType>portable</DebugType>
-  <AssemblyName>zlib.net</AssemblyName>
-	<PackageTags>zlib;deflate;compression</PackageTags>
-	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-	<PackageReadmeFile>README.md</PackageReadmeFile>
-  <PackageProjectUrl>https://github.com/cinderblocks/zlib.net</PackageProjectUrl>
-  <RepositoryType>git</RepositoryType>
-  <RepositoryUrl>https://github.com/cinderblocks/zlib.net.git</RepositoryUrl>
-	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-  <IncludeSymbols>true</IncludeSymbols>
-  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!-- NOTE: the "mutliplatform" typo is the published NuGet ID. Renaming it would orphan existing consumers. -->
+    <PackageId>zlib.net-mutliplatform</PackageId>
+    <Product>zlib.net</Product>
+    <Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
+    <Copyright>Copyright © 2006-2007, ComponentAce, 2022-2025 Sjofn LLC</Copyright>
+    <AssemblyTitle>zlib.net</AssemblyTitle>
+    <Version>1.1.0</Version>
+    <Company>ComponentAce</Company>
+    <Authors>cinderblocks</Authors>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <DebugType>portable</DebugType>
+    <AssemblyName>zlib.net</AssemblyName>
+    <PackageTags>zlib;deflate;compression</PackageTags>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/cinderblocks/zlib.net</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/cinderblocks/zlib.net.git</RepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Packages are produced explicitly with `dotnet pack` (see .github/workflows). -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+
+    <!-- Fail `dotnet pack` if the public API or target frameworks regress against the last published release. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>1.1.0</PackageValidationBaselineVersion>
+
+    <!-- Source Link (bundled with the .NET SDK) and reproducible builds. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- tests/ lives under this project's folder; keep it (and its bin/obj) out of the library. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**</DefaultItemExcludes>
   </PropertyGroup>
-  <ItemGroup>
-	<None Include="README.md" Pack="true" PackagePath="" />
-  </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="**/obj/**" />
-    <Compile Remove="**/bin/**" />
+    <None Include="README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>
