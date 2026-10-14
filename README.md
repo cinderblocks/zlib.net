@@ -15,7 +15,7 @@ dotnet add package zlib.net-multiplatform
 
 Versions up to 1.1.0 were published under the misspelled ID `zlib.net-mutliplatform`. From 2.0.0 the package is `zlib.net-multiplatform`.
 
-Targets `netstandard2.0` and `netstandard2.1`.
+Targets `netstandard2.0`, `netstandard2.1` and `net8.0`. The `Span`/`Memory` overloads and `DisposeAsync` are available on `netstandard2.1` and `net8.0`.
 
 ## Usage
 
@@ -38,6 +38,17 @@ using (var zout = new ZOutputStream(decompressed))
     zout.Write(compressedData, 0, compressedData.Length);
     zout.Finish();
     result = decompressed.ToArray();
+}
+
+// Async (netstandard2.1 / net8.0): DisposeAsync finishes the stream without blocking on the target
+await using (var zout = new ZOutputStream(target, zlibConst.Z_DEFAULT_COMPRESSION, leaveOpen: true))
+{
+    await zout.WriteAsync(data);
+}
+
+await using (var zin = new ZInputStream(source))
+{
+    int read = await zin.ReadAsync(buffer.AsMemory());
 }
 ```
 

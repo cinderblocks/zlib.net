@@ -46,6 +46,10 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+using System.Buffers;
+using System.Runtime.InteropServices;
+#endif
 
 namespace ComponentAce.Compression.Libs.zlib
 {
@@ -153,6 +157,70 @@ namespace ComponentAce.Compression.Libs.zlib
 			return count - z.avail_out;
 		}
 
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+		// Output is produced into a bounded pooled array, since the zlib engine works on arrays.
+		private const int SpanChunkSize = 16 * 1024;
+
+		/// <inheritdoc />
+		public override int Read(Span<byte> buffer)
+		{
+			if (disposed) throw new ObjectDisposedException(GetType().Name);
+			if (buffer.Length == 0 || finished)
+				return 0;
+
+			int count = Math.Min(buffer.Length, SpanChunkSize);
+			byte[] rented = ArrayPool<byte>.Shared.Rent(count);
+			try
+			{
+				int read = Read(rented, 0, count);
+				rented.AsSpan(0, read).CopyTo(buffer);
+				return read;
+			}
+			finally
+			{
+				ArrayPool<byte>.Shared.Return(rented);
+			}
+		}
+
+		/// <inheritdoc />
+		public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+		{
+			if (MemoryMarshal.TryGetArray((ReadOnlyMemory<byte>)buffer, out ArraySegment<byte> segment))
+				return new ValueTask<int>(ReadAsync(segment.Array!, segment.Offset, segment.Count, cancellationToken));
+			return ReadViaPooledArrayAsync(buffer, cancellationToken);
+		}
+
+		private async ValueTask<int> ReadViaPooledArrayAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+		{
+			if (disposed) throw new ObjectDisposedException(GetType().Name);
+			if (buffer.Length == 0 || finished)
+				return 0;
+
+			int count = Math.Min(buffer.Length, SpanChunkSize);
+			byte[] rented = ArrayPool<byte>.Shared.Rent(count);
+			try
+			{
+				int read = await ReadAsync(rented, 0, count, cancellationToken).ConfigureAwait(false);
+				rented.AsMemory(0, read).CopyTo(buffer);
+				return read;
+			}
+			finally
+			{
+				ArrayPool<byte>.Shared.Return(rented);
+			}
+		}
+
+		/// <inheritdoc />
+		public override async ValueTask DisposeAsync()
+		{
+			if (disposed)
+				return;
+			ReleaseZlibState();
+			if (!leaveOpen)
+				await in_Renamed.DisposeAsync().ConfigureAwait(false);
+		}
+#endif
+
 		private void Prepare(byte[] buffer, int offset, int count)
 		{
 			if (buffer == null) throw new ArgumentNullException(nameof(buffer));
@@ -232,17 +300,21 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			if (disposing && !disposed)
 			{
-				disposed = true;
-				if (compress)
-					z.deflateEnd();
-				else
-					z.inflateEnd();
-				z.free();
-
+				ReleaseZlibState();
 				if (!leaveOpen)
 					in_Renamed.Dispose();
 			}
 			base.Dispose(disposing);
+		}
+
+		private void ReleaseZlibState()
+		{
+			disposed = true;
+			if (compress)
+				z.deflateEnd();
+			else
+				z.inflateEnd();
+			z.free();
 		}
 
 		/// <inheritdoc />

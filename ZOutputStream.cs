@@ -262,6 +262,7 @@ namespace ComponentAce.Compression.Libs.zlib
         /// <inheritdoc />
         public override async System.Threading.Tasks.Task FlushAsync(System.Threading.CancellationToken cancellationToken)
         {
+            ThrowIfDisposed();
             await out_Renamed!.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -292,6 +293,33 @@ namespace ComponentAce.Compression.Libs.zlib
             }
             catch
             {
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously finishes the stream and releases it, like <see cref="Dispose(bool)"/> but without blocking on the
+        /// underlying stream. As with Dispose, an error while finishing is not thrown; call <see cref="FinishAsync"/> first
+        /// to observe it.
+        /// </summary>
+        public override async System.Threading.Tasks.ValueTask DisposeAsync()
+        {
+            var output = out_Renamed;
+            if (output == null)
+                return;
+
+            try
+            {
+                await FinishAsync().ConfigureAwait(false);
+            }
+            catch
+            {
+            }
+            finally
+            {
+                End();
+                out_Renamed = null;
+                if (!leaveOpen)
+                    await output.DisposeAsync().ConfigureAwait(false);
             }
         }
 #endif
