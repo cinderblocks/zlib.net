@@ -226,7 +226,7 @@ namespace zlib.net.Tests
                 var ours = new MemoryStream();
                 if (!ViaInputStream(mutated, 4096, ours))
                     continue; // e.g. the runtime stopped at an early final block and the "trailer" no longer lines up
-                Assert.True(expected.AsSpan().SequenceEqual(ours.ToArray()), $"{name}: iteration {i}: outputs differ");
+                Assert.True(System.Linq.Enumerable.SequenceEqual(expected, ours.ToArray()), $"{name}: iteration {i}: outputs differ");
                 compared++;
             }
             Assert.True(compared > 0, $"{name}: no damaged stream was decodable by both, so nothing was compared");
