@@ -3,3 +3,8 @@ obj/
 .vs/
 .idea/
 .DS_Store
+*.user
+TestResults/
+*.nupkg
+*.snupkg
+artifacts/

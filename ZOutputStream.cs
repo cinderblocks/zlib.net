@@ -111,9 +111,7 @@ namespace ComponentAce.Compression.Libs.zlib
             if (len == 0)
                 return;
             int err;
-            byte[] b = new byte[b1.Length];
-            Array.Copy(b1, 0, b, 0, b1.Length);
-            z.next_in = b;
+            z.next_in = b1;
             z.next_in_index = off;
             z.avail_in = len;
             do
@@ -175,9 +173,7 @@ namespace ComponentAce.Compression.Libs.zlib
             if (count == 0)
                 return;
 
-            byte[] b = new byte[buffer.Length];
-            Array.Copy(buffer, 0, b, 0, buffer.Length);
-            z.next_in = b;
+            z.next_in = buffer;
             z.next_in_index = offset;
             z.avail_in = count;
 
@@ -294,6 +290,9 @@ namespace ComponentAce.Compression.Libs.zlib
         }
         public virtual void end()
         {
+            if (z == null)
+                return;
+
             if (compress)
             {
                 z.deflateEnd();
@@ -309,7 +308,7 @@ namespace ComponentAce.Compression.Libs.zlib
         protected override void Dispose(bool disposing)
         //!public override void Close()
         {
-            if (disposing)
+            if (disposing && out_Renamed != null)
             {
                 try
                 {

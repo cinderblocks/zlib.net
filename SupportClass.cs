@@ -107,16 +107,12 @@ namespace ComponentAce.Compression.Libs.zlib
 			if (target.Length == 0)
 				return 0;
 
-			byte[] receiver = new byte[target.Length];
-			int bytesRead   = sourceStream.Read(receiver, start, count);
+			int bytesRead = sourceStream.Read(target, start, count);
 
 			// Returns -1 if EOF
-			if (bytesRead == 0)	
+			if (bytesRead == 0)
 				return -1;
-                
-			for(int i = start; i < start + bytesRead; i++)
-				target[i] = receiver[i];
-                
+
 			return bytesRead;
 		}
 
