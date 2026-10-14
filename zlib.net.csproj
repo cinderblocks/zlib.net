@@ -26,6 +26,16 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <DefaultItemExcludes>$(DefaultItemExcludes);tests/**;benchmarks/**</DefaultItemExcludes>
+
+    <!-- Nullable annotations need C# 8+, which the netstandard2.0 target can use with this setting. The internal
+         engine files (a straight port of zlib) opt out with #nullable disable; the public surface is annotated. -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+
+    <!-- XML documentation ships with the package for IntelliSense. The zlib-style constants and fields are
+         self-describing, so CS1591 (missing comment) is not enforced. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <!-- Pure managed code, so the modern target can promise trimming and Native AOT compatibility. -->

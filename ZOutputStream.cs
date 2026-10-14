@@ -52,6 +52,10 @@ using System.Threading.Tasks;
 namespace ComponentAce.Compression.Libs.zlib
 {
 
+    /// <summary>
+    /// A write-only stream that deflates (compresses) or inflates (decompresses) everything written to it and passes the
+    /// result to an underlying stream. Dispose it, or call <see cref="Finish"/>, to write any remaining data.
+    /// </summary>
     public class ZOutputStream : System.IO.Stream, IDisposable
     {
         private void InitBlock()
@@ -59,6 +63,7 @@ namespace ComponentAce.Compression.Libs.zlib
             flush_Renamed_Field = zlibConst.Z_NO_FLUSH;
             buf = new byte[bufsize];
         }
+        /// <summary>The flush mode used after each write, one of the <c>Z_*_FLUSH</c> values in <see cref="zlibConst"/>. Defaults to <see cref="zlibConst.Z_NO_FLUSH"/>.</summary>
         public virtual int FlushMode
         {
             get => (flush_Renamed_Field);
@@ -71,13 +76,18 @@ namespace ComponentAce.Compression.Libs.zlib
         /// <summary> Returns the total number of bytes output so far.</summary>
         public virtual long TotalOut => z.total_out;
 
+        /// <summary>The underlying zlib stream.</summary>
         protected internal ZStream z = new ZStream();
+        /// <summary>The size of the output buffer.</summary>
         protected internal int bufsize = 4096;
+        /// <summary>Backing field of <see cref="FlushMode"/>.</summary>
         protected internal int flush_Renamed_Field;
-        protected internal byte[] buf, buf1 = new byte[1];
+        /// <summary>Output buffers.</summary>
+        protected internal byte[] buf = Array.Empty<byte>(), buf1 = new byte[1];
+        /// <summary>true when deflating, false when inflating.</summary>
         protected internal bool compress;
 
-        private System.IO.Stream out_Renamed;
+        private System.IO.Stream? out_Renamed;
         private readonly bool leaveOpen;
 
         /// <summary> Creates a stream that inflates everything written to it into <paramref name="out_Renamed"/>.</summary>
@@ -86,6 +96,7 @@ namespace ComponentAce.Compression.Libs.zlib
         }
 
         /// <summary> Creates a stream that inflates everything written to it into <paramref name="out_Renamed"/>.</summary>
+        /// <param name="out_Renamed">The stream that receives the inflated data.</param>
         /// <param name="leaveOpen">true to leave <paramref name="out_Renamed"/> open when this stream is disposed.</param>
         public ZOutputStream(System.IO.Stream out_Renamed, bool leaveOpen)
         {
@@ -102,6 +113,8 @@ namespace ComponentAce.Compression.Libs.zlib
         }
 
         /// <summary> Creates a stream that deflates everything written to it into <paramref name="out_Renamed"/>.</summary>
+        /// <param name="out_Renamed">The stream that receives the deflated data.</param>
+        /// <param name="level">The compression level, 0 (none) to 9 (best), or <see cref="zlibConst.Z_DEFAULT_COMPRESSION"/>.</param>
         /// <param name="leaveOpen">true to leave <paramref name="out_Renamed"/> open when this stream is disposed.</param>
         public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen)
         {
@@ -112,23 +125,27 @@ namespace ComponentAce.Compression.Libs.zlib
             compress = true;
         }
 
+        // Callers that go on to use out_Renamed! rely on this check.
         private void ThrowIfDisposed()
         {
             if (z == null || out_Renamed == null)
                 throw new ObjectDisposedException(GetType().Name);
         }
 
+        /// <summary>Writes a single byte.</summary>
         public void WriteByte(int b)
         {
             buf1[0] = (byte)b;
             Write(buf1, 0, 1);
         }
         //UPGRADE_TODO: The differences in the Expected value  of parameters for method 'WriteByte'  may cause compilation errors.  'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1092_3"'
+        /// <inheritdoc />
         public override void WriteByte(byte b)
         {
             WriteByte(b);
         }
 
+        /// <inheritdoc />
         public override void Write(Byte[] b1, int off, int len)
         {
             ThrowIfDisposed();
@@ -146,7 +163,7 @@ namespace ComponentAce.Compression.Libs.zlib
                 err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
                 if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
                     throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
-                out_Renamed.Write(buf, 0, bufsize - z.avail_out);
+                out_Renamed!.Write(buf, 0, bufsize - z.avail_out);
             }
             while (z.avail_in > 0 || z.avail_out == 0);
         }
@@ -155,6 +172,7 @@ namespace ComponentAce.Compression.Libs.zlib
         // Large inputs are fed through a bounded pooled buffer instead of renting one as big as the input.
         private const int SpanChunkSize = 16 * 1024;
 
+        /// <inheritdoc />
         public override void Write(ReadOnlySpan<byte> buffer)
         {
             ThrowIfDisposed();
@@ -178,11 +196,13 @@ namespace ComponentAce.Compression.Libs.zlib
             }
         }
 
+        /// <summary>Writes the bytes in <paramref name="buffer"/>.</summary>
         public void Write(Span<byte> buffer)
         {
             Write((ReadOnlySpan<byte>)buffer);
         }
 
+        /// <inheritdoc />
         public override async System.Threading.Tasks.Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
         {
             ThrowIfDisposed();
@@ -204,11 +224,12 @@ namespace ComponentAce.Compression.Libs.zlib
                 err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
                 if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
                     throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
-                await out_Renamed.WriteAsync(buf, 0, bufsize - z.avail_out, cancellationToken).ConfigureAwait(false);
+                await out_Renamed!.WriteAsync(buf, 0, bufsize - z.avail_out, cancellationToken).ConfigureAwait(false);
             }
             while (z.avail_in > 0 || z.avail_out == 0);
         }
 
+        /// <inheritdoc />
         public override async System.Threading.Tasks.ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, System.Threading.CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -217,7 +238,7 @@ namespace ComponentAce.Compression.Libs.zlib
 
             if (System.Runtime.InteropServices.MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> segment))
             {
-                await WriteAsync(segment.Array, segment.Offset, segment.Count, cancellationToken).ConfigureAwait(false);
+                await WriteAsync(segment.Array!, segment.Offset, segment.Count, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -238,11 +259,13 @@ namespace ComponentAce.Compression.Libs.zlib
             }
         }
 
+        /// <inheritdoc />
         public override async System.Threading.Tasks.Task FlushAsync(System.Threading.CancellationToken cancellationToken)
         {
-            await out_Renamed.FlushAsync(cancellationToken).ConfigureAwait(false);
+            await out_Renamed!.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>Asynchronously writes any remaining data to the underlying stream and finishes the compressed or decompressed stream.</summary>
         public async System.Threading.Tasks.ValueTask FinishAsync(System.Threading.CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -258,7 +281,7 @@ namespace ComponentAce.Compression.Libs.zlib
                     throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
                 if (bufsize - z.avail_out > 0)
                 {
-                    await out_Renamed.WriteAsync(new ReadOnlyMemory<byte>(buf, 0, bufsize - z.avail_out), cancellationToken).ConfigureAwait(false);
+                    await out_Renamed!.WriteAsync(new ReadOnlyMemory<byte>(buf, 0, bufsize - z.avail_out), cancellationToken).ConfigureAwait(false);
                 }
             }
             while (z.avail_in > 0 || z.avail_out == 0);
@@ -287,7 +310,7 @@ namespace ComponentAce.Compression.Libs.zlib
                     throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
                 if (bufsize - z.avail_out > 0)
                 {
-                    out_Renamed.Write(buf, 0, bufsize - z.avail_out);
+                    out_Renamed!.Write(buf, 0, bufsize - z.avail_out);
                 }
             }
             while (z.avail_in > 0 || z.avail_out == 0);
@@ -299,6 +322,7 @@ namespace ComponentAce.Compression.Libs.zlib
             {
             }
         }
+        /// <summary>Obsolete spelling of <see cref="Finish"/>.</summary>
         [Obsolete("Use Finish().")]
         public virtual void finish() => Finish();
 
@@ -317,12 +341,14 @@ namespace ComponentAce.Compression.Libs.zlib
                 z.inflateEnd();
             }
             z.free();
-            z = null;
+            z = null!; // the stream is unusable from here on; every public member checks for disposal first
         }
 
+        /// <summary>Obsolete spelling of <see cref="End"/>.</summary>
         [Obsolete("Use End().")]
         public virtual void end() => End();
 
+        /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
             if (disposing && out_Renamed != null)
@@ -344,26 +370,35 @@ namespace ComponentAce.Compression.Libs.zlib
             }
         }
 
+        /// <inheritdoc />
         public override void Flush()
         {
             ThrowIfDisposed();
-            out_Renamed.Flush();
+            out_Renamed!.Flush();
         }
 
+        /// <inheritdoc />
         public override bool CanRead => false;
 
+        /// <inheritdoc />
         public override bool CanSeek => false;
 
+        /// <inheritdoc />
         public override bool CanWrite => out_Renamed != null;
 
+        /// <inheritdoc />
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
+        /// <inheritdoc />
         public override long Seek(long offset, System.IO.SeekOrigin origin) => throw new NotSupportedException();
 
+        /// <inheritdoc />
         public override void SetLength(long value) => throw new NotSupportedException();
 
+        /// <inheritdoc />
         public override long Length => throw new NotSupportedException();
 
+        /// <inheritdoc />
         public override long Position
         {
             get => throw new NotSupportedException();

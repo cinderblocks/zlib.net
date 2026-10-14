@@ -67,13 +67,18 @@ namespace ComponentAce.Compression.Libs.zlib
 		/// <summary> Returns the total number of bytes output so far.</summary>
 		public virtual long TotalOut => z.total_out;
 
+		/// <summary>The underlying zlib stream.</summary>
 		protected ZStream z = new ZStream();
+		/// <summary>The size of the input buffer.</summary>
 		protected int bufsize = 8192; // was 512: one read per 512 bytes is costly on unbuffered streams
+		/// <summary>The flush mode used while deflating.</summary>
 		protected int flush = zlibConst.Z_NO_FLUSH;
-		protected byte[] buf, buf1 = new byte[1];
+		/// <summary>Input buffers.</summary>
+		protected byte[] buf = Array.Empty<byte>(), buf1 = new byte[1];
+		/// <summary>true when deflating, false when inflating.</summary>
 		protected bool compress;
 
-		internal Stream in_Renamed;
+		internal Stream in_Renamed = Stream.Null;
 		private bool leaveOpen;
 		private bool nomoreinput;
 		private bool finished;
@@ -115,6 +120,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			z.avail_in = 0;
 		}
 
+		/// <inheritdoc />
 		public override int Read(byte[] buffer, int offset, int count)
 		{
 			Prepare(buffer, offset, count);
@@ -130,6 +136,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			return count - z.avail_out;
 		}
 
+		/// <inheritdoc />
 		public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
 		{
 			Prepare(buffer, offset, count);
@@ -220,6 +227,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			return skipped;
 		}
 
+		/// <inheritdoc />
 		protected override void Dispose(bool disposing)
 		{
 			if (disposing && !disposed)
@@ -237,23 +245,32 @@ namespace ComponentAce.Compression.Libs.zlib
 			base.Dispose(disposing);
 		}
 
+		/// <inheritdoc />
 		public override void Flush()
 		{
 		}
 
+		/// <inheritdoc />
 		public override bool CanRead => !disposed;
+		/// <inheritdoc />
 		public override bool CanSeek => false;
+		/// <inheritdoc />
 		public override bool CanWrite => false;
+		/// <inheritdoc />
 		public override long Length => throw new NotSupportedException();
 
+		/// <inheritdoc />
 		public override long Position
 		{
 			get => throw new NotSupportedException();
 			set => throw new NotSupportedException();
 		}
 
+		/// <inheritdoc />
 		public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+		/// <inheritdoc />
 		public override void SetLength(long value) => throw new NotSupportedException();
+		/// <inheritdoc />
 		public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 	}
 }

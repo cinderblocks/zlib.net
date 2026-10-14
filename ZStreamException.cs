@@ -46,11 +46,14 @@ namespace ComponentAce.Compression.Libs.zlib
 {
 	
 	
+	/// <summary>The exception thrown when compressed data is invalid or a zlib operation fails.</summary>
 	public class ZStreamException:System.IO.IOException
 	{
+		/// <summary>Creates an exception with no message.</summary>
 		public ZStreamException()
 		{
 		}
+		/// <summary>Creates an exception with the given message.</summary>
 		public ZStreamException(System.String s):base(s)
 		{
 		}

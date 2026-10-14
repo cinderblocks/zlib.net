@@ -1,3 +1,4 @@
+#nullable disable
 
 namespace ComponentAce.Compression.Libs.zlib
 {

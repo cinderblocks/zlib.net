@@ -45,9 +45,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ComponentAce.Compression.Libs.zlib
 {
 	
+	/// <summary>Constants and the version string of the zlib API.</summary>
 	public static class zlibConst
 	{
 		private const System.String version_Renamed_Field = "1.0.2";
+		/// <summary>Returns the zlib version this library is based on.</summary>
 		public static System.String version()
 		{
 			return version_Renamed_Field;

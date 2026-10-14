@@ -45,6 +45,10 @@ using System;
 namespace ComponentAce.Compression.Libs.zlib
 {
 	
+	/// <summary>
+	/// The low-level zlib stream, mirroring the C <c>z_stream</c> API. Most callers should use <see cref="ZOutputStream"/>
+	/// or <see cref="ZInputStream"/> instead.
+	/// </summary>
 	public sealed class ZStream
 	{
 		
@@ -69,40 +73,58 @@ namespace ComponentAce.Compression.Libs.zlib
 		private const int Z_BUF_ERROR = - 5;
 		private const int Z_VERSION_ERROR = - 6;
 		
-		public byte[] next_in; // next input byte
+		/// <summary>The input buffer. Consumption is tracked by <see cref="next_in_index"/> and <see cref="avail_in"/>.</summary>
+		public byte[]? next_in; // next input byte
+		/// <summary>The index of the next input byte in <see cref="next_in"/>.</summary>
 		public int next_in_index;
+		/// <summary>The number of input bytes available at <see cref="next_in_index"/>.</summary>
 		public int avail_in; // number of bytes available at next_in
+		/// <summary>The total number of input bytes consumed so far.</summary>
 		public long total_in; // total nb of input bytes read so far
 		
-		public byte[] next_out; // next output byte should be put there
+		/// <summary>The output buffer. Progress is tracked by <see cref="next_out_index"/> and <see cref="avail_out"/>.</summary>
+		public byte[]? next_out; // next output byte should be put there
+		/// <summary>The index in <see cref="next_out"/> where the next output byte is written.</summary>
 		public int next_out_index;
+		/// <summary>The free space remaining in <see cref="next_out"/>.</summary>
 		public int avail_out; // remaining free space at next_out
+		/// <summary>The total number of bytes produced so far.</summary>
 		public long total_out; // total nb of bytes output so far
 		
-		public String msg;
+		/// <summary>The last error message, or null.</summary>
+		public string? msg;
 		
-		internal Deflate dstate;
-		internal Inflate istate;
+		internal Deflate? dstate;
+		internal Inflate? istate;
 		
 		internal int data_type; // best guess about the data type: ascii or binary
 		
+		/// <summary>The Adler-32 checksum of the uncompressed data processed so far.</summary>
 		public long adler;
-		internal Adler32 _adler = new Adler32();
+		internal Adler32? _adler = new Adler32();
 		
+		/// <summary>Initializes the stream for decompression using the default window size.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int inflateInit()
 		{
 			return inflateInit(DEF_WBITS);
 		}
+		/// <summary>Initializes the stream for decompression with a window of <paramref name="w"/> bits.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int inflateInit(int w)
 		{
 			istate = new Inflate();
 			return istate.inflateInit(this, w);
 		}
 		
+		/// <summary>Decompresses as much data as possible from <see cref="next_in"/> into <see cref="next_out"/>.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int inflate(int f)
 		{
 			return istate == null ? Z_STREAM_ERROR : Inflate.inflate(this, f);
 		}
+		/// <summary>Releases the decompression state.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int inflateEnd()
 		{
 			if (istate == null)
@@ -111,28 +133,40 @@ namespace ComponentAce.Compression.Libs.zlib
 			istate = null;
 			return ret;
 		}
+		/// <summary>Skips invalid data until a possible full-flush point is found.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int inflateSync()
 		{
 			return istate?.inflateSync(this) ?? Z_STREAM_ERROR;
 		}
+		/// <summary>Sets the preset dictionary used for decompression.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int inflateSetDictionary(byte[] dictionary, int dictLength)
 		{
 			return istate == null ? Z_STREAM_ERROR : Inflate.inflateSetDictionary(this, dictionary, dictLength);
 		}
 		
+		/// <summary>Initializes the stream for compression at the given level (0-9, or <see cref="zlibConst.Z_DEFAULT_COMPRESSION"/>).</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateInit(int level)
 		{
 			return deflateInit(level, MAX_WBITS);
 		}
+		/// <summary>Initializes the stream for compression at the given level with a window of <paramref name="bits"/> bits.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateInit(int level, int bits)
 		{
 			dstate = new Deflate();
 			return dstate.deflateInit(this, level, bits);
 		}
+		/// <summary>Compresses as much data as possible from <see cref="next_in"/> into <see cref="next_out"/>.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflate(int flush)
 		{
 			return dstate?.deflate(this, flush) ?? Z_STREAM_ERROR;
 		}
+		/// <summary>Releases the compression state.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateEnd()
 		{
 			if (dstate == null)
@@ -141,10 +175,14 @@ namespace ComponentAce.Compression.Libs.zlib
 			dstate = null;
 			return ret;
 		}
+		/// <summary>Changes the compression level and strategy in the middle of a stream.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateParams(int level, int strategy)
 		{
 			return dstate?.deflateParams(this, level, strategy) ?? Z_STREAM_ERROR;
 		}
+		/// <summary>Sets the preset dictionary used for compression.</summary>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateSetDictionary(byte[] dictionary, int dictLength)
 		{
 			return dstate?.deflateSetDictionary(this, dictionary, dictLength) ?? Z_STREAM_ERROR;
@@ -156,20 +194,21 @@ namespace ComponentAce.Compression.Libs.zlib
 		// (See also read_buf()).
 		internal void  flush_pending()
 		{
-			int len = dstate.pending;
+			// Only called from deflate, which has set up dstate and the output buffer.
+			int len = dstate!.pending;
 			
 			if (len > avail_out)
 				len = avail_out;
 			if (len == 0)
 				return ;
 			
-			if (dstate.pending_buf.Length <= dstate.pending_out || next_out.Length <= next_out_index || dstate.pending_buf.Length < (dstate.pending_out + len) || next_out.Length < (next_out_index + len))
+			if (dstate.pending_buf.Length <= dstate.pending_out || next_out!.Length <= next_out_index || dstate.pending_buf.Length < (dstate.pending_out + len) || next_out.Length < (next_out_index + len))
 			{
 				//System.Console.Out.WriteLine(dstate.pending_buf.Length + ", " + dstate.pending_out + ", " + next_out.Length + ", " + next_out_index + ", " + len);
 				//System.Console.Out.WriteLine("avail_out=" + avail_out);
 			}
 			
-			Array.Copy(dstate.pending_buf, dstate.pending_out, next_out, next_out_index, len);
+			Array.Copy(dstate.pending_buf, dstate.pending_out, next_out!, next_out_index, len);
 			
 			next_out_index += len;
 			dstate.pending_out += len;
@@ -198,16 +237,17 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			avail_in -= len;
 			
-			if (dstate.noheader == 0)
+			if (dstate!.noheader == 0)
 			{
 				adler = Adler32.adler32(adler, next_in, next_in_index, len);
 			}
-			Array.Copy(next_in, next_in_index, buf, start, len);
+			Array.Copy(next_in!, next_in_index, buf, start, len);
 			next_in_index += len;
 			total_in += len;
 			return len;
 		}
 		
+		/// <summary>Drops the buffer references held by this stream.</summary>
 		public void  free()
 		{
 			next_in = null;
