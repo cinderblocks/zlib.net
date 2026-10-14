@@ -60,11 +60,3 @@ Switch the package reference to `zlib.net-multiplatform`. The namespace and asse
 dotnet test
 dotnet pack zlib.net.csproj -c Release
 ```
-
-`dotnet pack` validates the package's target frameworks. Once 2.0.0 is published, set `PackageValidationBaselineVersion` in `zlib.net.csproj`
-so it also fails on public API regressions.
-
-## Releasing
-
-Push a version tag (e.g. `1.1.1`). GitHub Actions runs the tests, packs with the tag as the version, publishes to nuget.org
-(requires the `NUGET_API_KEY` repository secret) and creates a GitHub release.
