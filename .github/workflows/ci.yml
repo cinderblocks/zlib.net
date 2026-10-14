@@ -46,15 +46,20 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
-      - name: Pack
+      # The csproj is the single source of the package version; a tag that disagrees with it is a mistake.
+      - name: Check tag matches the project version
+        if: github.ref_type == 'tag'
         shell: bash
         run: |
-          args=()
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            args+=("-p:Version=${GITHUB_REF_NAME#v}")
+          project_version="$(dotnet msbuild zlib.net.csproj -getProperty:Version)"
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [[ "$project_version" != "$tag_version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the project version $project_version. Update <Version> in zlib.net.csproj first."
+            exit 1
           fi
-          # Package validation compares the result against the last published release.
-          dotnet pack zlib.net.csproj --configuration Release --output artifacts "${args[@]}"
+      # Package validation also checks the result against the baseline version once one is set in the csproj.
+      - name: Pack
+        run: dotnet pack zlib.net.csproj --configuration Release --output artifacts
       - uses: actions/upload-artifact@v7
         with:
           name: nuget-packages
