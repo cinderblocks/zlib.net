@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    # Releases are cut by pushing a tag such as 1.1.1 or v1.1.1.
+    tags: ['v?[0-9]+.[0-9]+.[0-9]+*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+      # Windows additionally runs the net48 test target against the netstandard2.0 build.
+      - run: dotnet test zlib.net.sln --configuration Release
+
+  pack:
+    name: Pack
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+      - name: Pack
+        shell: bash
+        run: |
+          args=()
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            args+=("-p:Version=${GITHUB_REF_NAME#v}")
+          fi
+          # Package validation compares the result against the last published release.
+          dotnet pack zlib.net.csproj --configuration Release --output artifacts "${args[@]}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages
+          path: artifacts/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    if: github.ref_type == 'tag'
+    needs: pack
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/download-artifact@v8
+        with:
+          name: nuget-packages
+          path: artifacts
+      # The matching .snupkg symbol package is pushed automatically alongside each .nupkg.
+      - name: Push to nuget.org
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" artifacts/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
