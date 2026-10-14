@@ -42,122 +42,218 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * and contributors of zlib.
 */
 
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace ComponentAce.Compression.Libs.zlib
 {
-	
-	public class ZInputStream:System.IO.BinaryReader
+	/// <summary>
+	/// A read-only stream that inflates (default) or deflates the data of an underlying stream as it is read.
+	/// </summary>
+	public class ZInputStream : Stream
 	{
-		internal void  InitBlock()
-		{
-			flush = zlibConst.Z_NO_FLUSH;
-			buf = new byte[bufsize];
-		}
+		/// <summary> The flush mode passed to inflate/deflate. In compress mode the stream is finished automatically once the input is exhausted.</summary>
 		public virtual int FlushMode
 		{
-			get => (flush);
+			get => flush;
+			set => flush = value;
+		}
 
-            set => flush = value;
-        }
 		/// <summary> Returns the total number of bytes input so far.</summary>
 		public virtual long TotalIn => z.total_in;
 
-        /// <summary> Returns the total number of bytes output so far.</summary>
+		/// <summary> Returns the total number of bytes output so far.</summary>
 		public virtual long TotalOut => z.total_out;
 
-        protected ZStream z = new ZStream();
-		protected int bufsize = 512;		
-		protected int flush;		
+		protected ZStream z = new ZStream();
+		protected int bufsize = 512;
+		protected int flush = zlibConst.Z_NO_FLUSH;
 		protected byte[] buf, buf1 = new byte[1];
 		protected bool compress;
-		
-		internal System.IO.Stream in_Renamed = null;
-		
-		public ZInputStream(System.IO.Stream in_Renamed):base(in_Renamed)
+
+		internal Stream in_Renamed;
+		private bool leaveOpen;
+		private bool nomoreinput;
+		private bool finished;
+		private bool disposed;
+
+		/// <summary> Creates a stream that inflates the data read from <paramref name="in_Renamed"/>.</summary>
+		public ZInputStream(Stream in_Renamed) : this(in_Renamed, false)
 		{
-			InitBlock();
-			this.in_Renamed = in_Renamed;
+		}
+
+		/// <summary> Creates a stream that inflates the data read from <paramref name="in_Renamed"/>.</summary>
+		public ZInputStream(Stream in_Renamed, bool leaveOpen)
+		{
+			Init(in_Renamed, leaveOpen);
 			z.inflateInit();
 			compress = false;
-			z.next_in = buf;
-			z.next_in_index = 0;
-			z.avail_in = 0;
 		}
-		
-		public ZInputStream(System.IO.Stream in_Renamed, int level):base(in_Renamed)
+
+		/// <summary> Creates a stream that deflates the data read from <paramref name="in_Renamed"/>.</summary>
+		public ZInputStream(Stream in_Renamed, int level) : this(in_Renamed, level, false)
 		{
-			InitBlock();
-			this.in_Renamed = in_Renamed;
+		}
+
+		/// <summary> Creates a stream that deflates the data read from <paramref name="in_Renamed"/>.</summary>
+		public ZInputStream(Stream in_Renamed, int level, bool leaveOpen)
+		{
+			Init(in_Renamed, leaveOpen);
 			z.deflateInit(level);
 			compress = true;
+		}
+
+		private void Init(Stream source, bool leaveOpen)
+		{
+			in_Renamed = source ?? throw new ArgumentNullException(nameof(source));
+			this.leaveOpen = leaveOpen;
+			buf = new byte[bufsize];
 			z.next_in = buf;
 			z.next_in_index = 0;
 			z.avail_in = 0;
 		}
-		
-		/*public int available() throws IOException {
-		return inf.finished() ? 0 : 1;
-		}*/
-		
-		public  override int Read()
+
+		public override int Read(byte[] buffer, int offset, int count)
 		{
-			if (read(buf1, 0, 1) == - 1)
-				return (- 1);
-			return (buf1[0] & 0xFF);
+			Prepare(buffer, offset, count);
+			if (count == 0 || finished)
+				return 0;
+
+			do
+			{
+				if (z.avail_in == 0 && !nomoreinput)
+					SetInput(in_Renamed.Read(buf, 0, bufsize));
+			}
+			while (Step(count));
+			return count - z.avail_out;
 		}
-		
-		internal bool nomoreinput = false;
-				
+
+		public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+		{
+			Prepare(buffer, offset, count);
+			if (count == 0 || finished)
+				return 0;
+
+			do
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+				if (z.avail_in == 0 && !nomoreinput)
+					SetInput(await in_Renamed.ReadAsync(buf, 0, bufsize, cancellationToken).ConfigureAwait(false));
+			}
+			while (Step(count));
+			return count - z.avail_out;
+		}
+
+		private void Prepare(byte[] buffer, int offset, int count)
+		{
+			if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+			if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset));
+			if (count < 0 || count > buffer.Length - offset) throw new ArgumentOutOfRangeException(nameof(count));
+			if (disposed) throw new ObjectDisposedException(GetType().Name);
+
+			z.next_out = buffer;
+			z.next_out_index = offset;
+			z.avail_out = count;
+		}
+
+		private void SetInput(int bytesRead)
+		{
+			z.next_in_index = 0;
+			z.avail_in = bytesRead > 0 ? bytesRead : 0;
+			if (bytesRead <= 0)
+				nomoreinput = true;
+		}
+
+		/// <summary> Runs one inflate/deflate step. Returns true if more input is needed to produce any output.</summary>
+		private bool Step(int count)
+		{
+			// Once the input is exhausted a compressor must be told to finish, otherwise it never emits its trailer.
+			int mode = compress && nomoreinput && z.avail_in == 0 ? zlibConst.Z_FINISH : flush;
+			int err = compress ? z.deflate(mode) : z.inflate(mode);
+
+			if (err == zlibConst.Z_STREAM_END)
+			{
+				finished = true;
+				return false;
+			}
+			if (err == zlibConst.Z_BUF_ERROR && !compress && nomoreinput && z.avail_in == 0)
+			{
+				if (z.avail_out == count)
+					throw new ZStreamException("inflating: unexpected end of compressed data");
+				return false;
+			}
+			if (err != zlibConst.Z_OK)
+				throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
+
+			return z.avail_out == count;
+		}
+
+		/// <summary> Reads the next decompressed (or compressed) byte, or -1 at the end of the stream.</summary>
+		public override int ReadByte()
+		{
+			return Read(buf1, 0, 1) == 0 ? -1 : buf1[0];
+		}
+
+		/// <summary> Use <see cref="Read(byte[], int, int)"/>; this returns -1 instead of 0 at the end of the stream.</summary>
+		[Obsolete("Use Read(byte[], int, int), which returns 0 at the end of the stream.")]
 		public int read(byte[] b, int off, int len)
 		{
-			if (len == 0)
-				return (0);
-			int err;
-			z.next_out = b;
-			z.next_out_index = off;
-			z.avail_out = len;
-			do 
-			{
-				if ((z.avail_in == 0) && (!nomoreinput))
-				{
-					// if buffer is empty and more input is avaiable, refill it
-					z.next_in_index = 0;
-					z.avail_in = SupportClass.ReadInput(in_Renamed, buf, 0, bufsize); //(bufsize<z.avail_out ? bufsize : z.avail_out));
-					if (z.avail_in == - 1)
-					{
-						z.avail_in = 0;
-						nomoreinput = true;
-					}
-				}
-				err = compress ? z.deflate(flush) : z.inflate(flush);
-				if (nomoreinput && (err == zlibConst.Z_BUF_ERROR))
-					return (- 1);
-				if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
-					throw new ZStreamException((compress?"de":"in") + "flating: " + z.msg);
-				if (nomoreinput && (z.avail_out == len))
-					return (- 1);
-			}
-			while (z.avail_out == len && err == zlibConst.Z_OK);
-			//System.err.print("("+(len-z.avail_out)+")");
-			return (len - z.avail_out);
+			int n = Read(b, off, len);
+			return n == 0 && len > 0 ? -1 : n;
 		}
-				
+
+		/// <summary> Reads and discards up to <paramref name="n"/> bytes, returning the number skipped.</summary>
+		[Obsolete("Read from the stream and discard the data instead.")]
 		public long skip(long n)
 		{
-			int len = 512;
-			if (n < len)
-				len = (int) n;
-			byte[] tmp = new byte[len];
-			return SupportClass.ReadInput(BaseStream, tmp, 0, tmp.Length);
+			var tmp = new byte[(int)Math.Min(n, 512)];
+			long skipped = 0;
+			while (skipped < n)
+			{
+				int read = Read(tmp, 0, (int)Math.Min(tmp.Length, n - skipped));
+				if (read == 0)
+					break;
+				skipped += read;
+			}
+			return skipped;
 		}
 
 		protected override void Dispose(bool disposing)
-		//!public override void  Close()
 		{
-			if (disposing)
+			if (disposing && !disposed)
 			{
-				//!in_Renamed.Close();
-				in_Renamed.Dispose();
+				disposed = true;
+				if (compress)
+					z.deflateEnd();
+				else
+					z.inflateEnd();
+				z.free();
+
+				if (!leaveOpen)
+					in_Renamed.Dispose();
 			}
+			base.Dispose(disposing);
 		}
+
+		public override void Flush()
+		{
+		}
+
+		public override bool CanRead => !disposed;
+		public override bool CanSeek => false;
+		public override bool CanWrite => false;
+		public override long Length => throw new NotSupportedException();
+
+		public override long Position
+		{
+			get => throw new NotSupportedException();
+			set => throw new NotSupportedException();
+		}
+
+		public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+		public override void SetLength(long value) => throw new NotSupportedException();
+		public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 	}
 }

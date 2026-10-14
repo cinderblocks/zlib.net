@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- NOTE: the "mutliplatform" typo is the published NuGet ID. Renaming it would orphan existing consumers. -->
-    <PackageId>zlib.net-mutliplatform</PackageId>
+    <!-- 2.0 replaces the misspelled "zlib.net-mutliplatform" ID, which stays on nuget.org at 1.x. -->
+    <PackageId>zlib.net-multiplatform</PackageId>
     <Product>zlib.net</Product>
     <Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
     <Copyright>Copyright © 2006-2007, ComponentAce, 2022-2025 Sjofn LLC</Copyright>
     <AssemblyTitle>zlib.net</AssemblyTitle>
-    <Version>1.1.0</Version>
+    <Version>2.0.0</Version>
     <Company>ComponentAce</Company>
     <Authors>cinderblocks</Authors>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
@@ -24,9 +24,9 @@
     <!-- Packages are produced explicitly with `dotnet pack` (see .github/workflows). -->
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-    <!-- Fail `dotnet pack` if the public API or target frameworks regress against the last published release. -->
+    <!-- Validates the package's target frameworks on `dotnet pack`. After the first release under this ID,
+         add <PackageValidationBaselineVersion> to also catch public API regressions. -->
     <EnablePackageValidation>true</EnablePackageValidation>
-    <PackageValidationBaselineVersion>1.1.0</PackageValidationBaselineVersion>
 
     <!-- Source Link (bundled with the .NET SDK) and reproducible builds. -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

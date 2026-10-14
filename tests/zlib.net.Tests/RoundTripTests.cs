@@ -42,7 +42,7 @@ namespace zlib.net.Tests
                 else
                     for (int off = 0; off < input.Length; off += chunk)
                         zout.Write(input, off, Math.Min(chunk, input.Length - off));
-                zout.finish();
+                zout.Finish();
                 zout.Flush();
                 // ZOutputStream disposes the underlying stream, so grab bytes first.
                 return ms.ToArray();
@@ -59,7 +59,7 @@ namespace zlib.net.Tests
                 else
                     for (int off = 0; off < input.Length; off += chunk)
                         zout.Write(input, off, Math.Min(chunk, input.Length - off));
-                zout.finish();
+                zout.Finish();
                 return ms.ToArray();
             }
         }
@@ -139,7 +139,7 @@ namespace zlib.net.Tests
             using (var zout = new ZOutputStream(ms, zlibConst.Z_DEFAULT_COMPRESSION))
             {
                 zout.Write(padded, 100, data.Length);
-                zout.finish();
+                zout.Finish();
                 Assert.Equal(data, PlatformInflate(ms.ToArray()));
             }
         }
@@ -153,26 +153,167 @@ namespace zlib.net.Tests
             {
                 foreach (var b in data)
                     zout.WriteByte(b);
-                zout.finish();
+                zout.Finish();
                 Assert.Equal(data, PlatformInflate(ms.ToArray()));
             }
         }
 
-#if NET6_0_OR_GREATER
-        [Fact]
-        public void ZInputStreamDecompressesPlatformOutput()
+        [Theory]
+        [MemberData(nameof(Sizes))]
+        public void ZInputStreamInflates(int size)
         {
-            var data = MakeData(30_000);
-            using var zin = new ZInputStream(new MemoryStream(PlatformDeflate(data)));
-            var result = new MemoryStream();
-            var buf = new byte[1000];
-            int n;
-            while ((n = zin.read(buf, 0, buf.Length)) > 0)
-                result.Write(buf, 0, n);
+            var data = MakeData(size);
+            var compressed = Compress(data, zlibConst.Z_DEFAULT_COMPRESSION);
+            using var zin = new ZInputStream(new MemoryStream(compressed));
+            using var result = new MemoryStream();
+            zin.CopyTo(result);
             Assert.Equal(data, result.ToArray());
         }
 
-#endif
+        [Theory]
+        [MemberData(nameof(Sizes))]
+        public void ZInputStreamDeflates(int size)
+        {
+            var data = MakeData(size);
+            using var zin = new ZInputStream(new MemoryStream(data), zlibConst.Z_DEFAULT_COMPRESSION);
+            using var compressed = new MemoryStream();
+            zin.CopyTo(compressed);
+            Assert.Equal(data, PlatformInflate(compressed.ToArray()));
+        }
+
+        [Fact]
+        public void ZInputStreamReturnsZeroAfterEnd()
+        {
+            var compressed = Compress(MakeData(100), zlibConst.Z_DEFAULT_COMPRESSION);
+            using var zin = new ZInputStream(new MemoryStream(compressed));
+            var buf = new byte[1000];
+            Assert.Equal(100, zin.Read(buf, 0, buf.Length));
+            Assert.Equal(0, zin.Read(buf, 0, buf.Length));
+            Assert.Equal(0, zin.Read(buf, 0, buf.Length));
+            Assert.Equal(-1, zin.ReadByte());
+        }
+
+        [Fact]
+        public void ZInputStreamReadByte()
+        {
+            var data = MakeData(1_000);
+            using var zin = new ZInputStream(new MemoryStream(Compress(data, zlibConst.Z_DEFAULT_COMPRESSION)));
+            foreach (var expected in data)
+                Assert.Equal(expected, zin.ReadByte());
+            Assert.Equal(-1, zin.ReadByte());
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task ZInputStreamReadAsync()
+        {
+            var data = MakeData(100_000);
+            using var zin = new ZInputStream(new MemoryStream(Compress(data, zlibConst.Z_DEFAULT_COMPRESSION)));
+            using var result = new MemoryStream();
+            await zin.CopyToAsync(result);
+            Assert.Equal(data, result.ToArray());
+        }
+
+        [Fact]
+        public void ZInputStreamThrowsOnTruncatedInput()
+        {
+            var compressed = Compress(MakeData(20_000), zlibConst.Z_DEFAULT_COMPRESSION);
+            var truncated = new byte[compressed.Length / 2];
+            Array.Copy(compressed, truncated, truncated.Length);
+            using var zin = new ZInputStream(new MemoryStream(truncated));
+            Assert.Throws<ZStreamException>(() => zin.CopyTo(Stream.Null));
+        }
+
+        [Fact]
+        public void ZInputStreamThrowsOnCorruptInput()
+        {
+            var compressed = Compress(MakeData(5_000), zlibConst.Z_DEFAULT_COMPRESSION);
+            compressed[compressed.Length / 2] ^= 0xFF;
+            compressed[compressed.Length / 2 + 1] ^= 0xFF;
+            using var zin = new ZInputStream(new MemoryStream(compressed));
+            Assert.Throws<ZStreamException>(() => zin.CopyTo(Stream.Null));
+        }
+
+        [Fact]
+        public void LegacyLowercaseMembersStillWork()
+        {
+#pragma warning disable CS0618
+            var data = MakeData(5_000);
+            var ms = new MemoryStream();
+            var zout = new ZOutputStream(ms, zlibConst.Z_DEFAULT_COMPRESSION, leaveOpen: true);
+            zout.Write(data, 0, data.Length);
+            zout.finish();
+            zout.end();
+            zout.Dispose();
+
+            using var zin = new ZInputStream(new MemoryStream(ms.ToArray()));
+            var buf = new byte[data.Length];
+            int total = 0, n;
+            while ((n = zin.read(buf, total, buf.Length - total)) > 0)
+                total += n;
+            Assert.Equal(data.Length, total);
+            Assert.Equal(-1, zin.read(new byte[10], 0, 10));
+            Assert.Equal(data, buf);
+#pragma warning restore CS0618
+        }
+
+        [Fact]
+        public void LeaveOpenKeepsUnderlyingStreamOpen()
+        {
+            var ms = new MemoryStream();
+            using (var zout = new ZOutputStream(ms, zlibConst.Z_DEFAULT_COMPRESSION, leaveOpen: true))
+                zout.Write(new byte[] { 1, 2, 3 }, 0, 3);
+            Assert.True(ms.CanRead);
+            Assert.Equal(new byte[] { 1, 2, 3 }, PlatformInflate(ms.ToArray()));
+
+            var src = new MemoryStream(ms.ToArray());
+            using (var zin = new ZInputStream(src, leaveOpen: true))
+                zin.CopyTo(Stream.Null);
+            Assert.True(src.CanRead);
+        }
+
+        [Fact]
+        public void DisposeClosesUnderlyingStreamByDefault()
+        {
+            var ms = new MemoryStream();
+            new ZOutputStream(ms, zlibConst.Z_DEFAULT_COMPRESSION).Dispose();
+            Assert.False(ms.CanRead);
+        }
+
+        [Fact]
+        public void UnsupportedMembersThrowNotSupported()
+        {
+            using var zout = new ZOutputStream(new MemoryStream(), zlibConst.Z_DEFAULT_COMPRESSION);
+            Assert.False(zout.CanRead);
+            Assert.False(zout.CanSeek);
+            Assert.True(zout.CanWrite);
+            Assert.Throws<NotSupportedException>(() => zout.Read(new byte[1], 0, 1));
+            Assert.Throws<NotSupportedException>(() => zout.Seek(0, SeekOrigin.Begin));
+            Assert.Throws<NotSupportedException>(() => zout.SetLength(0));
+            Assert.Throws<NotSupportedException>(() => zout.Length);
+            Assert.Throws<NotSupportedException>(() => zout.Position);
+            Assert.Throws<NotSupportedException>(() => zout.Position = 0);
+
+            using var zin = new ZInputStream(new MemoryStream());
+            Assert.True(zin.CanRead);
+            Assert.False(zin.CanSeek);
+            Assert.False(zin.CanWrite);
+            Assert.Throws<NotSupportedException>(() => zin.Write(new byte[1], 0, 1));
+            Assert.Throws<NotSupportedException>(() => zin.Seek(0, SeekOrigin.Begin));
+            Assert.Throws<NotSupportedException>(() => zin.Length);
+        }
+
+        [Fact]
+        public void UsingDisposedStreamsThrowsObjectDisposed()
+        {
+            var zout = new ZOutputStream(new MemoryStream(), zlibConst.Z_DEFAULT_COMPRESSION);
+            zout.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => zout.Write(new byte[1], 0, 1));
+
+            var zin = new ZInputStream(new MemoryStream());
+            zin.Dispose();
+            zin.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => zin.Read(new byte[1], 0, 1));
+        }
 
         [Fact]
         public void CorruptInputThrowsZStreamException()
@@ -199,7 +340,7 @@ namespace zlib.net.Tests
             var ms = new MemoryStream();
             using var zout = new ZOutputStream(ms, zlibConst.Z_DEFAULT_COMPRESSION);
             zout.Write(new ReadOnlySpan<byte>(data));
-            zout.finish();
+            zout.Finish();
             Assert.Equal(data, PlatformInflate(ms.ToArray()));
         }
 

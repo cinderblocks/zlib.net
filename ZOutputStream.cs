@@ -78,21 +78,44 @@ namespace ComponentAce.Compression.Libs.zlib
         protected internal bool compress;
 
         private System.IO.Stream out_Renamed;
+        private readonly bool leaveOpen;
 
-        public ZOutputStream(System.IO.Stream out_Renamed)
+        /// <summary> Creates a stream that inflates everything written to it into <paramref name="out_Renamed"/>.</summary>
+        public ZOutputStream(System.IO.Stream out_Renamed) : this(out_Renamed, false)
+        {
+        }
+
+        /// <summary> Creates a stream that inflates everything written to it into <paramref name="out_Renamed"/>.</summary>
+        /// <param name="leaveOpen">true to leave <paramref name="out_Renamed"/> open when this stream is disposed.</param>
+        public ZOutputStream(System.IO.Stream out_Renamed, bool leaveOpen)
         {
             InitBlock();
-            this.out_Renamed = out_Renamed;
+            this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
+            this.leaveOpen = leaveOpen;
             z.inflateInit();
             compress = false;
         }
 
-        public ZOutputStream(System.IO.Stream out_Renamed, int level)
+        /// <summary> Creates a stream that deflates everything written to it into <paramref name="out_Renamed"/>.</summary>
+        public ZOutputStream(System.IO.Stream out_Renamed, int level) : this(out_Renamed, level, false)
+        {
+        }
+
+        /// <summary> Creates a stream that deflates everything written to it into <paramref name="out_Renamed"/>.</summary>
+        /// <param name="leaveOpen">true to leave <paramref name="out_Renamed"/> open when this stream is disposed.</param>
+        public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen)
         {
             InitBlock();
-            this.out_Renamed = out_Renamed;
+            this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
+            this.leaveOpen = leaveOpen;
             z.deflateInit(level);
             compress = true;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (z == null || out_Renamed == null)
+                throw new ObjectDisposedException(GetType().Name);
         }
 
         public void WriteByte(int b)
@@ -108,6 +131,7 @@ namespace ComponentAce.Compression.Libs.zlib
 
         public override void Write(Byte[] b1, int off, int len)
         {
+            ThrowIfDisposed();
             if (len == 0)
                 return;
             int err;
@@ -130,6 +154,7 @@ namespace ComponentAce.Compression.Libs.zlib
 #if NETSTANDARD2_1_OR_GREATER
         public override void Write(ReadOnlySpan<byte> buffer)
         {
+            ThrowIfDisposed();
             if (buffer.Length == 0)
                 return;
 
@@ -170,6 +195,7 @@ namespace ComponentAce.Compression.Libs.zlib
 
         public override async System.Threading.Tasks.Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
         {
+            ThrowIfDisposed();
             if (count == 0)
                 return;
 
@@ -195,6 +221,7 @@ namespace ComponentAce.Compression.Libs.zlib
 
         public override async System.Threading.Tasks.ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, System.Threading.CancellationToken cancellationToken = default)
         {
+            ThrowIfDisposed();
             if (buffer.Length == 0)
                 return;
 
@@ -237,6 +264,7 @@ namespace ComponentAce.Compression.Libs.zlib
 
         public async System.Threading.Tasks.ValueTask FinishAsync(System.Threading.CancellationToken cancellationToken = default)
         {
+            ThrowIfDisposed();
             do
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -264,8 +292,10 @@ namespace ComponentAce.Compression.Libs.zlib
         }
 #endif
 
-        public virtual void finish()
+        /// <summary> Completes the compressed (or decompressed) stream and flushes the underlying stream.</summary>
+        public virtual void Finish()
         {
+            ThrowIfDisposed();
             do
             {
                 z.next_out = buf;
@@ -288,7 +318,11 @@ namespace ComponentAce.Compression.Libs.zlib
             {
             }
         }
-        public virtual void end()
+        [Obsolete("Use Finish().")]
+        public virtual void finish() => Finish();
+
+        /// <summary> Releases the native-style zlib state. Called automatically on dispose.</summary>
+        public virtual void End()
         {
             if (z == null)
                 return;
@@ -305,23 +339,25 @@ namespace ComponentAce.Compression.Libs.zlib
             z = null;
         }
 
+        [Obsolete("Use End().")]
+        public virtual void end() => End();
+
         protected override void Dispose(bool disposing)
-        //!public override void Close()
         {
             if (disposing && out_Renamed != null)
             {
                 try
                 {
-                    finish();
+                    Finish();
                 }
                 catch
                 {
                 }
                 finally
                 {
-                    end();
-                    //!out_Renamed.Close();
-                    out_Renamed.Dispose();
+                    End();
+                    if (!leaveOpen)
+                        out_Renamed.Dispose();
                     out_Renamed = null;
                 }
             }
@@ -329,42 +365,28 @@ namespace ComponentAce.Compression.Libs.zlib
 
         public override void Flush()
         {
+            ThrowIfDisposed();
             out_Renamed.Flush();
         }
-        //UPGRADE_TODO: The following method was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override Int32 Read(Byte[] buffer, Int32 offset, Int32 count)
+
+        public override bool CanRead => false;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => out_Renamed != null;
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override long Seek(long offset, System.IO.SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
         {
-            return 0;
-        }
-        //UPGRADE_TODO: The following method was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override void SetLength(Int64 value)
-        {
-        }
-        //UPGRADE_TODO: The following method was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override Int64 Seek(Int64 offset, System.IO.SeekOrigin origin)
-        {
-            return 0;
-        }
-        //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override Boolean CanRead => false;
-
-        //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override Boolean CanSeek => false;
-
-        public override Boolean CanWrite => true;
-
-        //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override Int64 Length => 0;
-
-        //UPGRADE_TODO: The following property was automatically generated and it must be implemented in order to preserve the class logic. 'ms-help://MS.VSCC.2003/commoner/redir/redirect.htm?keyword="jlca1232_3"'
-        public override Int64 Position
-        {
-            get => 0;
-
-            set
-            {
-            }
-
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
         }
     }
 }
