@@ -67,7 +67,8 @@ jobs:
     needs: pack
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write   # gh release create
+      id-token: write   # OIDC token for NuGet trusted publishing
     steps:
       - uses: actions/setup-dotnet@v6
         with:
@@ -76,9 +77,16 @@ jobs:
         with:
           name: nuget-packages
           path: artifacts
+      # Exchanges the GitHub OIDC token for a short-lived nuget.org API key (needs a trusted publishing policy
+      # for this repository and workflow on nuget.org).
+      - name: NuGet login (OIDC)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: cinderblocks
       # The matching .snupkg symbol package is pushed automatically alongside each .nupkg.
       - name: Push to nuget.org
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
