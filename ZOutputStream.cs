@@ -152,39 +152,29 @@ namespace ComponentAce.Compression.Libs.zlib
         }
 
 #if NETSTANDARD2_1_OR_GREATER
+        // Large inputs are fed through a bounded pooled buffer instead of renting one as big as the input.
+        private const int SpanChunkSize = 16 * 1024;
+
         public override void Write(ReadOnlySpan<byte> buffer)
         {
             ThrowIfDisposed();
             if (buffer.Length == 0)
                 return;
 
-            byte[] rentedArray = null;
+            byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Math.Min(buffer.Length, SpanChunkSize));
             try
             {
-                rentedArray = ArrayPool<byte>.Shared.Rent(buffer.Length);
-                buffer.CopyTo(rentedArray);
-
-                z.next_in = rentedArray;
-                z.next_in_index = 0;
-                z.avail_in = buffer.Length;
-
-                int err;
-                do
+                while (buffer.Length > 0)
                 {
-                    z.next_out = buf;
-                    z.next_out_index = 0;
-                    z.avail_out = bufsize;
-                    err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
-                    if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
-                        throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
-                    out_Renamed.Write(buf, 0, bufsize - z.avail_out);
+                    int count = Math.Min(buffer.Length, SpanChunkSize);
+                    buffer.Slice(0, count).CopyTo(rentedArray);
+                    Write(rentedArray, 0, count);
+                    buffer = buffer.Slice(count);
                 }
-                while (z.avail_in > 0 || z.avail_out == 0);
             }
             finally
             {
-                if (rentedArray != null)
-                    ArrayPool<byte>.Shared.Return(rentedArray);
+                ArrayPool<byte>.Shared.Return(rentedArray);
             }
         }
 
@@ -225,35 +215,26 @@ namespace ComponentAce.Compression.Libs.zlib
             if (buffer.Length == 0)
                 return;
 
-            byte[] rentedArray = null;
+            if (System.Runtime.InteropServices.MemoryMarshal.TryGetArray(buffer, out ArraySegment<byte> segment))
+            {
+                await WriteAsync(segment.Array, segment.Offset, segment.Count, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Math.Min(buffer.Length, SpanChunkSize));
             try
             {
-                rentedArray = ArrayPool<byte>.Shared.Rent(buffer.Length);
-                buffer.CopyTo(rentedArray);
-
-                z.next_in = rentedArray;
-                z.next_in_index = 0;
-                z.avail_in = buffer.Length;
-
-                int err;
-                do
+                while (buffer.Length > 0)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    z.next_out = buf;
-                    z.next_out_index = 0;
-                    z.avail_out = bufsize;
-                    err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
-                    if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
-                        throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
-                    await out_Renamed.WriteAsync(new ReadOnlyMemory<byte>(buf, 0, bufsize - z.avail_out), cancellationToken).ConfigureAwait(false);
+                    int count = Math.Min(buffer.Length, SpanChunkSize);
+                    buffer.Slice(0, count).CopyTo(rentedArray);
+                    await WriteAsync(rentedArray, 0, count, cancellationToken).ConfigureAwait(false);
+                    buffer = buffer.Slice(count);
                 }
-                while (z.avail_in > 0 || z.avail_out == 0);
             }
             finally
             {
-                if (rentedArray != null)
-                    ArrayPool<byte>.Shared.Return(rentedArray);
+                ArrayPool<byte>.Shared.Return(rentedArray);
             }
         }
 

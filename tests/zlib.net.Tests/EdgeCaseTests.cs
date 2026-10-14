@@ -167,6 +167,24 @@ namespace zlib.net.Tests
             Assert.Equal(data, DecompressWithZInputStream(compressed, 1));
             Assert.Equal(data, DecompressWithZInputStream(compressed, 3));
         }
+
+        private sealed class ReadCountingStream : MemoryStream
+        {
+            public int Reads;
+            public ReadCountingStream(byte[] data) : base(data) { }
+            public override int Read(byte[] buffer, int offset, int count) { Reads++; return base.Read(buffer, offset, count); }
+        }
+
+        [Fact]
+        public void ZInputStreamDoesNotReadTheSourceInTinyPieces()
+        {
+            var compressed = Compress(TestData.Random(200_000), 6);
+            var source = new ReadCountingStream(compressed);
+            using (var zin = new ZInputStream(source))
+                zin.CopyTo(Stream.Null);
+            Assert.True(source.Reads < compressed.Length / 4096, $"{source.Reads} reads for {compressed.Length} bytes");
+        }
+
 #if NET8_0_OR_GREATER && !LIB_NETSTANDARD20
         [Fact]
         public async System.Threading.Tasks.Task SpanAndMemoryWritesOfLargeInputsRoundTrip()

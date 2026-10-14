@@ -980,6 +980,30 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 		}
 		
+		// Subtracts w_size from the first n entries of the table (treated as unsigned 16-bit), clamping at zero.
+		private static void Slide(short[] table, int n, int w_size)
+		{
+			int i = 0;
+#if NETSTANDARD2_1_OR_GREATER
+			if (System.Numerics.Vector.IsHardwareAccelerated)
+			{
+				var floor = new System.Numerics.Vector<ushort>((ushort) w_size);
+				var entries = System.Runtime.InteropServices.MemoryMarshal.Cast<short, System.Numerics.Vector<ushort>>(new Span<short>(table, 0, n));
+				for (int v = 0; v < entries.Length; v++)
+				{
+					// max(m, w) - w == (m >= w ? m - w : 0)
+					entries[v] = System.Numerics.Vector.Max(entries[v], floor) - floor;
+				}
+				i = entries.Length * System.Numerics.Vector<ushort>.Count;
+			}
+#endif
+			for (; i < n; i++)
+			{
+				int m = table[i] & 0xffff;
+				table[i] = (short) (m >= w_size ? m - w_size : 0);
+			}
+		}
+		
 		// Fill the window when the lookahead becomes insufficient.
 		// Updates strstart and lookahead.
 		//
@@ -990,8 +1014,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		//    option -- not supported here).
 		internal void  fill_window()
 		{
-			int n, m;
-			int p;
+			int n;
 			int more; // Amount of free space at the end of the window.
 			
 			do 
@@ -1025,27 +1048,10 @@ namespace ComponentAce.Compression.Libs.zlib
 					// later. (Using level 0 permanently is not an optimal usage of
 					// zlib, so we don't care about this pathological case.)
 					
-					n = hash_size;
-					p = n;
-					do 
-					{
-						m = (head[--p] & 0xffff);
-						head[p] = (short)(m >= w_size?(m - w_size):0);
-						//head[p] = (m >= w_size?(short) (m - w_size):0);
-					}
-					while (--n != 0);
-					
-					n = w_size;
-					p = n;
-					do 
-					{
-						m = (prev[--p] & 0xffff);
-						prev[p] = (short)(m >= w_size?(m - w_size):0);
-						//prev[p] = (m >= w_size?(short) (m - w_size):0);
-						// If n is not on any hash chain, prev[n] is garbage but
-						// its value will never be used.
-					}
-					while (--n != 0);
+					Slide(head, hash_size, w_size);
+					// If n is not on any hash chain, prev[n] is garbage but
+					// its value will never be used.
+					Slide(prev, w_size, w_size);
 					more += w_size;
 				}
 				
@@ -1353,7 +1359,6 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			int chain_length = max_chain_length; // max hash chain length
 			int scan = strstart; // current string
-			int match; // matched string
 			int len; // length of current match
 			int best_len = prev_length; // best match length so far
 			int limit = strstart > (w_size - MIN_LOOKAHEAD)?strstart - (w_size - MIN_LOOKAHEAD):0;
@@ -1363,13 +1368,11 @@ namespace ComponentAce.Compression.Libs.zlib
 			// we prevent matches with the string of window index 0.
 			
 			int wmask = w_mask;
+			byte[] win = window; // locals avoid reloading the fields in the hot loop
+			short[] prv = prev;
 			
-			int strend = strstart + MAX_MATCH;
-			byte scan_end1 = window[scan + best_len - 1];
-			byte scan_end = window[scan + best_len];
-			
-			// The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of 16.
-			// It is easy to get rid of this optimization if necessary.
+			byte scan_end1 = win[scan + best_len - 1];
+			byte scan_end = win[scan + best_len];
 			
 			// Do not waste too much time if we already have a good match:
 			if (prev_length >= good_match)
@@ -1384,29 +1387,16 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			do 
 			{
-				match = cur_match;
-				
 				// Skip to next match if the match length cannot increase
 				// or if the match length is less than 2:
-				if (window[match + best_len] != scan_end || window[match + best_len - 1] != scan_end1 || window[match] != window[scan] || window[++match] != window[scan + 1])
+				if (win[cur_match + best_len] != scan_end || win[cur_match + best_len - 1] != scan_end1 || win[cur_match] != win[scan] || win[cur_match + 1] != win[scan + 1])
 					continue;
 				
-				// The check at best_len-1 can be removed because it will be made
-				// again later. (This heuristic is not always a win.)
 				// It is not necessary to compare scan[2] and match[2] since they
 				// are always equal when the other bytes match, given that
 				// the hash keys are equal and that HASH_BITS >= 8.
-				scan += 2; match++;
-				
-				// We check for insufficient lookahead only every 8th comparison;
-				// the 256th check will be made at strstart+258.
-				do 
-				{
-				}
-				while (window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && window[++scan] == window[++match] && scan < strend);
-				
-				len = MAX_MATCH - (strend - scan);
-				scan = strend - MAX_MATCH;
+				// The match length is the index of the first differing byte, capped at MAX_MATCH.
+				len = MatchLength(win, scan, cur_match);
 				
 				if (len > best_len)
 				{
@@ -1414,15 +1404,47 @@ namespace ComponentAce.Compression.Libs.zlib
 					best_len = len;
 					if (len >= nice_match)
 						break;
-					scan_end1 = window[scan + best_len - 1];
-					scan_end = window[scan + best_len];
+					scan_end1 = win[scan + best_len - 1];
+					scan_end = win[scan + best_len];
 				}
 			}
-			while ((cur_match = (prev[cur_match & wmask] & 0xffff)) > limit && --chain_length != 0);
+			while ((cur_match = (prv[cur_match & wmask] & 0xffff)) > limit && --chain_length != 0);
 			
 			if (best_len <= lookahead)
 				return best_len;
 			return lookahead;
+		}
+		
+		// Returns the length of the match between win[scan..] and win[match..], given that the first
+		// three bytes are known to be equal: the index of the first differing byte, or MAX_MATCH.
+		private static int MatchLength(byte[] win, int scan, int match)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				// Thirty-two 8-byte words cover offsets 3..258. A mismatch at offset 258 is clamped to
+				// MAX_MATCH, so it gives the same result as a full match, exactly like the byte-wise loop.
+				for (int off = 3; off <= MAX_MATCH - 7; off += 8)
+				{
+					ulong diff = BitConverter.ToUInt64(win, scan + off) ^ BitConverter.ToUInt64(win, match + off);
+					if (diff != 0)
+					{
+						int n = 0;
+						if ((diff & 0xFFFFFFFFUL) == 0) { diff >>= 32; n = 4; }
+						if ((diff & 0xFFFFUL) == 0) { diff >>= 16; n += 2; }
+						if ((diff & 0xFFUL) == 0) n++;
+						n += off;
+						return n < MAX_MATCH ? n : MAX_MATCH;
+					}
+				}
+				return MAX_MATCH;
+			}
+			
+			for (int off = 3; off < MAX_MATCH; off++)
+			{
+				if (win[scan + off] != win[match + off])
+					return off;
+			}
+			return MAX_MATCH;
 		}
 		
 		internal int deflateInit(ZStream strm, int level, int bits)

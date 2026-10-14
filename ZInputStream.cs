@@ -68,7 +68,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		public virtual long TotalOut => z.total_out;
 
 		protected ZStream z = new ZStream();
-		protected int bufsize = 512;
+		protected int bufsize = 8192; // was 512: one read per 512 bytes is costly on unbuffered streams
 		protected int flush = zlibConst.Z_NO_FLUSH;
 		protected byte[] buf, buf1 = new byte[1];
 		protected bool compress;
