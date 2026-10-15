@@ -1,7 +1,7 @@
 # zlib.net
 
 [![CI](https://github.com/cinderblocks/zlib.net/actions/workflows/ci.yml/badge.svg)](https://github.com/cinderblocks/zlib.net/actions/workflows/ci.yml)
-[![NuGet](https://img.shields.io/nuget/v/ZlibNet.svg)](https://www.nuget.org/packages/ZlibNet)
+[![NuGet](https://img.shields.io/nuget/v/ZlibCore.svg)](https://www.nuget.org/packages/ZlibCore)
 
 Managed version of the ZLIB compression library ported to .NET Core
 
@@ -10,10 +10,10 @@ This port is based on the 100% managed version of the library from [ComponentAce
 ## Installation
 
 ```
-dotnet add package ZlibNet
+dotnet add package ZlibCore
 ```
 
-Versions up to 1.1.0 were published under the misspelled ID `zlib.net-mutliplatform`. From 2.0.0 the package is `ZlibNet`.
+Versions up to 1.1.0 were published under the misspelled ID `zlib.net-mutliplatform`. From 2.0.0 the package is `ZlibCore`.
 
 Targets `netstandard2.0`, `netstandard2.1` and `net8.0`. The `Span`/`Memory` overloads and `DisposeAsync` are available on `netstandard2.1` and `net8.0`.
 
@@ -54,7 +54,7 @@ await using (var zin = new ZInputStream(source))
 
 ## Migrating from 1.x
 
-Switch the package reference to `ZlibNet`. The namespace and assembly name are unchanged. Breaking changes:
+Switch the package reference to `ZlibCore`. The namespace and assembly name are unchanged. Breaking changes:
 
 - `ZInputStream` is now a `Stream` rather than a `BinaryReader`. `Read(byte[], int, int)` returns decompressed data (previously it returned raw bytes
   from the underlying stream) and returns 0 at the end, like any other stream. `ReadByte()` replaces the no-argument `Read()`, and `ReadAsync` is supported.

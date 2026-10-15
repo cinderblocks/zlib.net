@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- 2.0 replaces the misspelled "zlib.net-mutliplatform" ID, which stays on nuget.org at 1.x. -->
-    <PackageId>ZlibNet</PackageId>
+    <PackageId>ZlibCore</PackageId>
     <Product>zlib.net</Product>
     <Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
     <Copyright>Copyright © 2006-2007, ComponentAce, 2022-2025 Sjofn LLC</Copyright>
