@@ -1,0 +1,50 @@
+name: Fuzz
+
+# Coverage-guided fuzzing with AFL++ and SharpFuzz. Kept out of ci.yml so releases never wait on it.
+on:
+  schedule:
+    - cron: '17 3 * * 1'   # Mondays, 03:17 UTC
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds to fuzz each target
+        default: '600'
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [inflate, roundtrip]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+      - name: Install AFL++ and SharpFuzz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y afl++
+          dotnet tool install --global SharpFuzz.CommandLine
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+          # AFL++ refuses to run when core dumps are piped to a handler; harmless to ignore if this is not permitted.
+          echo core | sudo tee /proc/sys/kernel/core_pattern || true
+      - name: Fuzz ${{ matrix.target }}
+        run: fuzz/run-afl.sh ${{ matrix.target }} ${{ github.event.inputs.seconds || '600' }}
+      - name: Upload findings
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fuzz-findings-${{ matrix.target }}
+          path: fuzz/work/${{ matrix.target }}/findings
+          if-no-files-found: ignore

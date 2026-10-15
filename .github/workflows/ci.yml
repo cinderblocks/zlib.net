@@ -38,6 +38,13 @@ jobs:
       # netstandard2.0 (the one .NET Framework consumers get). The default run above uses the net8.0 build.
       - run: dotnet test tests/zlib.net.Tests --configuration Release -f net8.0 -p:LibraryTfm=netstandard2.1
       - run: dotnet test tests/zlib.net.Tests --configuration Release -p:LibraryTfm=netstandard2.0
+      # The fuzz harness must keep working: replay its seed corpus through both targets (the AFL run is in fuzz.yml).
+      - name: Fuzz harness smoke test
+        shell: bash
+        run: |
+          dotnet run --project fuzz/zlib.net.Fuzz --configuration Release -- corpus fuzz/work/corpus
+          dotnet run --project fuzz/zlib.net.Fuzz --configuration Release --no-build -- inflate --replay fuzz/work/corpus/inflate
+          dotnet run --project fuzz/zlib.net.Fuzz --configuration Release --no-build -- roundtrip --replay fuzz/work/corpus/roundtrip
 
   pack:
     name: Pack

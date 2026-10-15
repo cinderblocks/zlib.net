@@ -9,3 +9,4 @@ TestResults/
 *.snupkg
 artifacts/
 BenchmarkDotNet.Artifacts/
+fuzz/work/
