@@ -14,6 +14,14 @@ namespace zlib.net.Fuzz
         // Inputs larger than this only slow the fuzzer down.
         public const int MaxInput = 1 << 20;
 
+        // A valid decompression bomb can legitimately take minutes to inflate one byte at a time. Once this much output
+        // has been checked the run is stopped, so the fuzzer's timeout only fires on genuine hangs.
+        private const long StopAfter = 8 << 20;
+
+        private sealed class EnoughOutputException : Exception
+        {
+        }
+
         public static byte[] ReadAll(Stream input)
         {
             using var ms = new MemoryStream();
@@ -37,13 +45,13 @@ namespace zlib.net.Fuzz
             var data = new byte[input.Length - 1];
             Array.Copy(input, 1, data, 0, data.Length);
 
-            // Deflate cannot expand data by more than about 1032:1, so anything beyond this is a runaway.
+            // Deflate cannot expand data by more than about 1032:1, so anything beyond this is a runaway (a bug).
             long limit = 1100L * data.Length + 4096;
 
             int chunk = config % 4 == 0 ? 1 : config % 4 == 1 ? 7 : config % 4 == 2 ? 512 : Math.Max(1, data.Length);
             try
             {
-                using var zout = new ZOutputStream(new LimitedSink(limit), leaveOpen: true);
+                using var zout = new ZOutputStream(new LimitedSink(limit, StopAfter), leaveOpen: true);
                 for (int off = 0; off < data.Length; off += chunk)
                     zout.Write(data, off, Math.Min(chunk, data.Length - off));
                 zout.Finish();
@@ -51,18 +59,24 @@ namespace zlib.net.Fuzz
             catch (ZStreamException)
             {
             }
+            catch (EnoughOutputException)
+            {
+            }
 
             int readSize = (config >> 2) % 3 == 0 ? 1 : (config >> 2) % 3 == 1 ? 100 : 16 * 1024;
             try
             {
                 using var zin = new ZInputStream(new MemoryStream(data));
-                var sink = new LimitedSink(limit);
+                var sink = new LimitedSink(limit, StopAfter);
                 var buffer = new byte[readSize];
                 int n;
                 while ((n = zin.Read(buffer, 0, buffer.Length)) > 0)
                     sink.Write(buffer, 0, n);
             }
             catch (ZStreamException)
+            {
+            }
+            catch (EnoughOutputException)
             {
             }
         }
@@ -116,14 +130,17 @@ namespace zlib.net.Fuzz
         private sealed class LimitedSink : Stream
         {
             private readonly long limit;
+            private readonly long stopAfter;
             private long written;
-            public LimitedSink(long limit) { this.limit = limit; }
+            public LimitedSink(long limit, long stopAfter) { this.limit = limit; this.stopAfter = stopAfter; }
 
             public override void Write(byte[] buffer, int offset, int count)
             {
                 written += count;
                 if (written > limit)
                     throw new InvalidOperationException($"output exceeded {limit} bytes");
+                if (written > stopAfter)
+                    throw new EnoughOutputException();
             }
 
             public override void Flush() { }

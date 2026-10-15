@@ -41,10 +41,18 @@ jobs:
           echo core | sudo tee /proc/sys/kernel/core_pattern || true
       - name: Fuzz ${{ matrix.target }}
         run: fuzz/run-afl.sh ${{ matrix.target }} ${{ github.event.inputs.seconds || '600' }}
+      # AFL++ names its files like "id:000000,src:000023,..."; artifacts cannot contain colons, so archive them first.
+      - name: Archive findings
+        if: always()
+        run: |
+          if [[ -d fuzz/work/${{ matrix.target }}/findings ]]; then
+            tar -czf fuzz-findings-${{ matrix.target }}.tar.gz -C fuzz/work/${{ matrix.target }} findings
+          fi
+        shell: bash
       - name: Upload findings
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: fuzz-findings-${{ matrix.target }}
-          path: fuzz/work/${{ matrix.target }}/findings
+          path: fuzz-findings-${{ matrix.target }}.tar.gz
           if-no-files-found: ignore
