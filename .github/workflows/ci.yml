@@ -99,8 +99,10 @@ jobs:
         with:
           user: cinderblocks
       # The matching .snupkg symbol package is pushed automatically alongside each .nupkg.
+      # No --skip-duplicate: it reports every HTTP 409 as "already exists" and hides the server's real message, and a push
+      # that did not happen must fail the job before a GitHub release is created for it.
       - name: Push to nuget.org
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
