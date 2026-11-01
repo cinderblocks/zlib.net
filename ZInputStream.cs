@@ -152,6 +152,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			Prepare(buffer, offset, count);
 			try
 			{
+				cancellationToken.ThrowIfCancellationRequested();
 				if (count == 0 || finished)
 					return 0;
 	
@@ -202,6 +203,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		private async ValueTask<int> ReadViaPooledArrayAsync(Memory<byte> buffer, CancellationToken cancellationToken)
 		{
 			if (disposed) throw new ObjectDisposedException(GetType().Name);
+			cancellationToken.ThrowIfCancellationRequested();
 			if (buffer.Length == 0 || finished)
 				return 0;
 

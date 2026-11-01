@@ -511,7 +511,7 @@ namespace ComponentAce.Compression.Libs.zlib
         public override bool CanSeek => false;
 
         /// <inheritdoc />
-        public override bool CanWrite => out_Renamed != null;
+        public override bool CanWrite => out_Renamed != null && z != null && !finished && !failed && out_Renamed.CanWrite;
 
         /// <inheritdoc />
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
