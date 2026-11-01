@@ -31,6 +31,13 @@ var compressedZeros = Pack(zeros);
 var dynamicMany = Pack(text, chunks: true);
 var compressedText = Pack(text);
 var oneBlock = EmptyBlocks(1); var manyBlocks = EmptyBlocks(10000);
+// Validate fixtures once outside timing; the timed drain uses byte counts to avoid hashing overhead.
+foreach (var fixture in new[] { (fixedSmall, System.Text.Encoding.ASCII.GetBytes("request")), (stored, text), (compressedZeros, zeros), (dynamicMany, text), (compressedText, text), (oneBlock, Array.Empty<byte>()), (manyBlocks, Array.Empty<byte>()) })
+{
+    using var z = new ZInputStream(new MemoryStream(fixture.Item1));
+    using var actual = new MemoryStream(); z.CopyTo(actual);
+    if (!actual.ToArray().AsSpan().SequenceEqual(fixture.Item2)) throw new InvalidOperationException("Invalid benchmark output.");
+}
 var buffer = new byte[4096];
 long Drain(byte[] packed, int size = 4096, bool asyncMemory = false, bool asyncArray = false)
 {

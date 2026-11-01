@@ -1,0 +1,98 @@
+[
+  {
+    "Name": "compress/empty",
+    "Milliseconds": 0.01318664293248945,
+    "AllocatedBytes": 22920,
+    "Value": 8
+  },
+  {
+    "Name": "compress/2KiB",
+    "Milliseconds": 0.034415691672401924,
+    "AllocatedBytes": 22920,
+    "Value": 1335
+  },
+  {
+    "Name": "compress/1MiB-array",
+    "Milliseconds": 22.08142,
+    "AllocatedBytes": 22928,
+    "Value": 693817
+  },
+  {
+    "Name": "compress/1MiB-span",
+    "Milliseconds": 21.99838,
+    "AllocatedBytes": 22928,
+    "Value": 693817
+  },
+  {
+    "Name": "inflate/fixed-small",
+    "Milliseconds": 0.0009626074402040521,
+    "AllocatedBytes": 41696,
+    "Value": 7
+  },
+  {
+    "Name": "inflate/fixed-10000-empty-blocks",
+    "Milliseconds": 0.20694152892561984,
+    "AllocatedBytes": 41696,
+    "Value": 0
+  },
+  {
+    "Name": "inflate/fixed-one-empty-block",
+    "Milliseconds": 0.0009319739049394221,
+    "AllocatedBytes": 41696,
+    "Value": 0
+  },
+  {
+    "Name": "inflate/dynamic-many-blocks",
+    "Milliseconds": 5.587144444444444,
+    "AllocatedBytes": 62042,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/stored",
+    "Milliseconds": 0.15500092879256966,
+    "AllocatedBytes": 41616,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-sync",
+    "Milliseconds": 0.24695999999999999,
+    "AllocatedBytes": 62040,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/text-sync",
+    "Milliseconds": 5.338189473684211,
+    "AllocatedBytes": 62042,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-memory-async",
+    "Milliseconds": 0.2502105,
+    "AllocatedBytes": 62040,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-array-async",
+    "Milliseconds": 0.252569696969697,
+    "AllocatedBytes": 80472,
+    "Value": 1048576
+  },
+  {
+    "Name": "flush/100-messages",
+    "Milliseconds": 0.638879617834395,
+    "AllocatedBytes": 32656,
+    "Value": 4214
+  },
+  {
+    "Name": "compress/reused-2KiB",
+    "Milliseconds": 0.030651884768617837,
+    "AllocatedBytes": 0,
+    "Value": 1335
+  },
+  {
+    "Name": "compress/reused-empty",
+    "Milliseconds": 0.009361256201441542,
+    "AllocatedBytes": 0,
+    "Value": 8
+  }
+]

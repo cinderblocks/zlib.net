@@ -314,7 +314,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			int r;
 			int[] hn = work.Used; hn[0] = 0; // hufts used in space
-			int[] v = work.Values; // work area for huft_build 
+			int[] v = work.Values; // work area for huft_build
 			
 			r = huft_build(c, 0, 19, 19, null, null, tb, bb, hp, hn, v, work);
 			

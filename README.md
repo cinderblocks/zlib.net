@@ -82,6 +82,35 @@ Switch the package reference to `ZlibCore`. The namespace and assembly name are 
 
 These error-reporting and assembly-signing changes can affect existing consumers; rebuild and test when upgrading.
 
+## Flushing and reuse
+
+`ZOutputStream.Flush()` / `FlushAsync()` now sync-flush the active compressor before flushing the sink. A reader can consume messages already written without waiting for `Finish()`. Flushing does not end the compressed stream, and subsequent writes are allowed. Explicit flushes can increase compressed size; avoid flushing every small write when message latency is not required.
+
+`ZInputStream` drains available decoded output before requesting more source bytes. Modern `ReadAsync(Memory<byte>)` uses a ValueTask core; the older Task-returning overload remains available.
+
+For repeated independent messages, `ZOutputStream.Reset()` reuses the same codec and output buffer after `Finish()` / `FinishAsync()`. It retains the sink and flush mode, and resets totals and dictionary history. Reset rejects active, failed, ended, or disposed streams. The caller must separate/frame independent streams; this API does not enable automatic concatenated-member decoding.
+
+```csharp
+using var target = new MemoryStream();
+using var compressor = new ZOutputStream(target, 6, leaveOpen: true);
+compressor.Write(firstMessage, 0, firstMessage.Length);
+compressor.Finish();
+byte[] firstPacket = target.ToArray();
+
+target.SetLength(0);
+target.Position = 0;
+compressor.Reset();
+compressor.Write(secondMessage, 0, secondMessage.Length);
+compressor.Finish();
+byte[] secondPacket = target.ToArray();
+```
+
+Low-level callers can use `ZStream.deflateReset()` / `inflateReset()` to discard a current stream and reuse codec storage. Set input/output fields for the new stream. Unlike the wrapper, these low-level methods permit discarding unfinished data.
+
+Default-size compressors cache up to four bundles of their large internal buffers process-wide (at most 1 MiB of array payload). All four arrays are cleared before a bundle is returned to the cache. Cache misses allocate normally, custom window sizes bypass the cache, and concurrent streams own separate leases. This trades bounded retained memory for less allocation/GC pressure; a cold or highly concurrent workload may still allocate full buffers. Explicit Reset avoids even the per-instance allocation. Caller buffers and disposed input sources are no longer retained by stream wrappers.
+
+See [stream-memory measurements](benchmarks/zlib.net.StreamMemory.Perf/README.md) for before/after timings, allocations, and reproduction commands.
+
 ## Building
 
 ```

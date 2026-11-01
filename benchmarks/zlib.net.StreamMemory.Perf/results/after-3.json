@@ -1,0 +1,98 @@
+[
+  {
+    "Name": "compress/empty",
+    "Milliseconds": 0.012213434294088912,
+    "AllocatedBytes": 22920,
+    "Value": 8
+  },
+  {
+    "Name": "compress/2KiB",
+    "Milliseconds": 0.033821609739600945,
+    "AllocatedBytes": 22920,
+    "Value": 1335
+  },
+  {
+    "Name": "compress/1MiB-array",
+    "Milliseconds": 21.93958,
+    "AllocatedBytes": 22928,
+    "Value": 693817
+  },
+  {
+    "Name": "compress/1MiB-span",
+    "Milliseconds": 22.21056,
+    "AllocatedBytes": 22928,
+    "Value": 693817
+  },
+  {
+    "Name": "inflate/fixed-small",
+    "Milliseconds": 0.0009477743879329947,
+    "AllocatedBytes": 41696,
+    "Value": 7
+  },
+  {
+    "Name": "inflate/fixed-10000-empty-blocks",
+    "Milliseconds": 0.20871416666666667,
+    "AllocatedBytes": 41696,
+    "Value": 0
+  },
+  {
+    "Name": "inflate/fixed-one-empty-block",
+    "Milliseconds": 0.0009215029487652045,
+    "AllocatedBytes": 41696,
+    "Value": 0
+  },
+  {
+    "Name": "inflate/dynamic-many-blocks",
+    "Milliseconds": 5.577066666666667,
+    "AllocatedBytes": 62042,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/stored",
+    "Milliseconds": 0.1557217729393468,
+    "AllocatedBytes": 41616,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-sync",
+    "Milliseconds": 0.2515211055276382,
+    "AllocatedBytes": 62040,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/text-sync",
+    "Milliseconds": 5.44,
+    "AllocatedBytes": 62042,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-memory-async",
+    "Milliseconds": 0.2551045801526718,
+    "AllocatedBytes": 62040,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-array-async",
+    "Milliseconds": 0.2599033766233766,
+    "AllocatedBytes": 80472,
+    "Value": 1048576
+  },
+  {
+    "Name": "flush/100-messages",
+    "Milliseconds": 0.699927972027972,
+    "AllocatedBytes": 32656,
+    "Value": 4214
+  },
+  {
+    "Name": "compress/reused-2KiB",
+    "Milliseconds": 0.030306727272727273,
+    "AllocatedBytes": 0,
+    "Value": 1335
+  },
+  {
+    "Name": "compress/reused-empty",
+    "Milliseconds": 0.009345509765442482,
+    "AllocatedBytes": 0,
+    "Value": 8
+  }
+]
