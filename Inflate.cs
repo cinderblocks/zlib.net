@@ -97,6 +97,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		// if BAD, inflateSync's marker bytes count
 		internal int marker;
+		private bool syncing, headerRead, recovered;
 		
 		// mode independent information
 		internal int nowrap; // flag for no wrapper
@@ -111,6 +112,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			z.total_in = z.total_out = 0;
 			z.msg = null;
+			z.istate.syncing = z.istate.headerRead = z.istate.recovered = false;
 			z.istate.mode = z.istate.nowrap != 0?BLOCKS:METHOD;
 			z.istate.blocks.reset(z, null);
 			return Z_OK;
@@ -207,6 +209,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							break;
 						}
 						
+						z.istate.headerRead = true;
 						if ((b & PRESET_DICT) == 0)
 						{
 							z.istate.mode = BLOCKS;
@@ -327,7 +330,7 @@ namespace ComponentAce.Compression.Libs.zlib
 						z.avail_in--; z.total_in++;
 						z.istate.need += (z.next_in[z.next_in_index++] & 0xffL);
 						
-						if (((int) (z.istate.was[0])) != ((int) (z.istate.need)))
+						if (!z.istate.recovered && ((int) (z.istate.was[0])) != ((int) (z.istate.need)))
 						{
 							z.istate.mode = BAD;
 							z.msg = "incorrect data check";
@@ -388,16 +391,30 @@ namespace ComponentAce.Compression.Libs.zlib
 			// set up
 			if (z == null || z.istate == null)
 				return Z_STREAM_ERROR;
-			if (z.istate.mode != BAD)
+			if (z.istate.mode == BAD && z.istate.marker == 5) return Z_DATA_ERROR;
+			if (z.avail_in == 0 && !syncing && blocks.bitk < 8) return Z_BUF_ERROR;
+			if (!syncing)
 			{
+				syncing = true;
 				z.istate.mode = BAD;
-				z.istate.marker = 0;
+				marker = 0;
+				// Bytes already consumed into the bit accumulator are part of the search.
+				// Discard the unfinished byte first, as in native zlib's inflateSync.
+				int discard = blocks.bitk & 7;
+				uint held = (uint)blocks.bitb >> discard;
+				int bits = blocks.bitk - discard;
+				while (bits >= 8)
+				{
+					int value = (byte)held;
+					marker = value == mark[marker] ? marker + 1 : value != 0 ? 0 : 4 - marker;
+					held >>= 8; bits -= 8;
+				}
+				blocks.bitb = blocks.bitk = 0;
 			}
-			if ((n = z.avail_in) == 0)
-				return Z_BUF_ERROR;
+			n = z.avail_in;
 			p = z.next_in_index;
-			m = z.istate.marker;
-			
+			m = marker;
+
 			// search
 			while (n != 0 && m < 4)
 			{
@@ -428,7 +445,12 @@ namespace ComponentAce.Compression.Libs.zlib
 				return Z_DATA_ERROR;
 			}
 			r = z.total_in; w = z.total_out;
+			bool wrapped = headerRead;
 			inflateReset(z);
+			headerRead = wrapped;
+			if (!wrapped) nowrap = 1;
+			recovered = true; // The checksum covers bytes lost before the recovery point.
+			blocks.checkfn = null;
 			z.total_in = r; z.total_out = w;
 			z.istate.mode = BLOCKS;
 			return Z_OK;
