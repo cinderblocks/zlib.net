@@ -109,7 +109,7 @@ foreach (int level in new[] { 0, 6 })
 { foreach (bool span in new[] { false, true })
 {
     string label = $"write/{name}/level{level}/{(span ? "span" : "array")}";
-    if (!label.Contains(filter, StringComparison.Ordinal)) continue;
+    if (!label.Contains(filter, StringComparison.Ordinal)) { continue; }
     using var z = new ZOutputStream(Stream.Null, level, true); z.Finish();
     Measure(label, () =>
     {
@@ -122,7 +122,7 @@ foreach (int size in new[] { 4096, 65536, 1048576 })
 { foreach (bool raw in new[] { false, true })
 {
     string label = $"decode-direct/stored/{(raw ? "raw" : "wrapped")}/{size}";
-    if (!label.Contains(filter, StringComparison.Ordinal)) continue;
+    if (!label.Contains(filter, StringComparison.Ordinal)) { continue; }
     byte[] data = dataSets["random"];
     using var sink = new MemoryStream();
     using (var packer = new ZLibStream(sink, CompressionLevel.NoCompression, true)) packer.Write(data);

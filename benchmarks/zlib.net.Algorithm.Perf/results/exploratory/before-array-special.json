@@ -1,0 +1,26 @@
+[
+  {
+    "Name": "level/text/0",
+    "Milliseconds": 0.2171572668112798,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "24C6617A3672C96F7B78ABEB67CA9946839C7BC0B5BBDE40B27E05659DE50338"
+  },
+  {
+    "Name": "level/random/0",
+    "Milliseconds": 0.21385470085470087,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "7FD2C5CAA9BD2E9DA3D235D09DE446AB42503BEEE529D5B0F9FBD3AFF2A253AE"
+  },
+  {
+    "Name": "level/zeros/0",
+    "Milliseconds": 0.21208411016949152,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "07DAB57560B8903CF096CA051C9DDFDB38699118EB5A219175B762EC9980AB7D"
+  }
+]

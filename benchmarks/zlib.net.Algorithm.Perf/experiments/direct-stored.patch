@@ -1,0 +1,130 @@
+--- a/InfBlocks.cs
++++ b/InfBlocks.cs
+@@ -265,6 +265,18 @@
+ 						break;
+ 					
+ 					case STORED: 
++						// Large stored runs can go straight to the caller. Retain only the trailing
++						// window for later backreferences, and never overtake pending decoded output.
++						if (left > end && n > end && z.avail_out > end && read == q)
++						{
++							t = Math.Min(left, Math.Min(n, z.avail_out));
++							q = CopyStoredDirect(z, p, t, q);
++							m = end - q;
++							p += t; n -= t; left -= t;
++							r = Z_OK;
++							if (left == 0) mode = last != 0 ? DRY : TYPE;
++							break;
++						}
+ 						if (n == 0)
+ 						{
+ 							bitb = b; bitk = k;
+@@ -633,6 +645,21 @@
+ 			//ZFREE(z, s);
+ 		}
+ 		
++		private int CopyStoredDirect(ZStream z, int input, int count, int position)
++		{
++			if (checkfn != null) z.adler = check = Adler32.adler32(check, z.next_in, input, count);
++			Array.Copy(z.next_in, input, z.next_out, z.next_out_index, count);
++			z.next_out_index += count; z.avail_out -= count; z.total_out += count;
++			// count exceeds the window size, so every previous history byte is superseded.
++			position = (position + count) % end;
++			int first = end - position;
++			Array.Copy(z.next_in, input + count - end, window, position, first);
++			if (position != 0) Array.Copy(z.next_in, input + count - position, window, 0, position);
++			AddHistory(count);
++			read = write = position;
++			return position;
++		}
++
+ 		// Copy an expanding DEFLATE match into a contiguous free section of the window.
+ 		// Seed at most one period from history (which may wrap), then double already-produced
+ 		// bytes. Each Array.Copy reads initialized bytes and never needs memmove-style expansion.
+--- /dev/null
++++ b/tests/zlib.net.Tests/StoredDirectTests.cs
+@@ -0,0 +1,84 @@
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Linq;
++using ComponentAce.Compression.Libs.zlib;
++using Xunit;
++
++namespace zlib.net.Tests
++{
++    public class StoredDirectTests
++    {
++        [Theory]
++        [InlineData(0, 1)]
++        [InlineData(7, 7)]
++        [InlineData(32767, 32768)]
++        public void LargeStoredRunsPreserveRingHistoryForFollowingMatches(int prefixLength, int distance)
++        {
++            var writer = new Bits(); var expected = new List<byte>();
++            void Stored(byte[] data)
++            {
++                writer.Put(0, 3); writer.Align(); writer.Put(data.Length, 16); writer.Put(data.Length ^ 65535, 16);
++                foreach (byte value in data) writer.Put(value, 8);
++                expected.AddRange(data);
++            }
++            if (prefixLength != 0) Stored(TestData.Random(prefixLength));
++            Stored(TestData.Random(65535, 2));
++            writer.Put(3, 3); // final fixed block
++            writer.Fixed(285); // length 258
++            int code = 0;
++            while (distance > InfTree.cpdist[code] + (1 << InfTree.cpdext[code]) - 1) code++;
++            writer.Put(Bits.Reverse(code, 5), 5); writer.Put(distance - InfTree.cpdist[code], InfTree.cpdext[code]);
++            for (int i = 0; i < 258; i++) expected.Add(expected[expected.Count - distance]);
++            writer.Fixed(256); writer.Align(); byte[] packed = writer.Data.ToArray();
++            // The large caller buffer exercises direct output; small reads exercise the original path.
++            foreach (bool wrapped in new[] { false, true })
++            foreach (int chunk in new[] { 7, 32768, 65536, 200000 })
++            {
++                byte[] input = packed;
++                if (wrapped)
++                {
++                    long adler = Adler32.adler32(1, expected.ToArray(), 0, expected.Count);
++                    input = new byte[] { 0x78, 0x01 }.Concat(packed).Concat(new[] { (byte)(adler >> 24), (byte)(adler >> 16), (byte)(adler >> 8), (byte)adler }).ToArray();
++                }
++                var z = new ZStream(); Assert.Equal(0, z.inflateInit(wrapped ? 15 : -15));
++                try
++                {
++                    z.next_in = input; z.avail_in = input.Length;
++                    using var actual = new MemoryStream(); var buffer = new byte[chunk + 14]; int status;
++                    do
++                    {
++                        z.next_out = buffer; z.next_out_index = 7; z.avail_out = chunk;
++                        status = z.inflate(0); Assert.True(status == 0 || status == 1, z.msg);
++                        actual.Write(buffer, 7, z.next_out_index - 7);
++                        Assert.Equal(new byte[7], buffer.Take(7).ToArray());
++                        Assert.Equal(new byte[7], buffer.Skip(chunk + 7).ToArray());
++                    } while (status != 1);
++                    Assert.Equal(expected.ToArray(), actual.ToArray());
++                    Assert.Equal(expected.Count, z.total_out); Assert.Equal(input.Length, z.total_in);
++                    if (wrapped && chunk == 200000)
++                    {
++                        z.inflateReset(); input[input.Length - 1] ^= 1;
++                        z.next_in = input; z.next_in_index = 0; z.avail_in = input.Length;
++                        z.next_out = buffer; z.next_out_index = 7; z.avail_out = chunk;
++                        Assert.Equal(-3, z.inflate(0)); Assert.Contains("check", z.msg);
++                    }
++                }
++                finally { z.inflateEnd(); }
++            }
++        }
++
++        private sealed class Bits
++        {
++            internal readonly List<byte> Data = new List<byte>(); private int pending, bits;
++            internal void Put(int value, int count)
++            {
++                pending |= value << bits; bits += count;
++                while (bits >= 8) { Data.Add((byte)pending); pending >>= 8; bits -= 8; }
++            }
++            internal void Align() { if (bits != 0) Put(0, 8 - bits); }
++            internal void Fixed(int symbol) => Put(Reverse(symbol <= 279 ? symbol - 256 : symbol - 280 + 192, symbol <= 279 ? 7 : 8), symbol <= 279 ? 7 : 8);
++            internal static int Reverse(int value, int count) { int result = 0; while (count-- > 0) { result = result * 2 + (value & 1); value >>= 1; } return result; }
++        }
++    }
++}

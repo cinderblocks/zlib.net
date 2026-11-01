@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD043 -->
-<!-- Independent measurement report; the project README heading template does not apply. -->
+<!-- Independent report; the project README heading template does not apply. -->
 
 # Stream behavior, allocation and throughput comparison
 
@@ -30,7 +30,7 @@ Fixtures are validated against their complete original data before timing.
 
 <!-- markdownlint-disable MD013 -->
 | Case | Before ms/op | After ms/op | Before B/op | After B/op | Time change |
-|---|---:|---:|---:|---:|---:|
+| --- | ---: | ---: | ---: | ---: | ---: |
 | compress/empty | 0.0143 | 0.0122 | 285,248 | 22,920 | -14.7% |
 | compress/2KiB | 0.0357 | 0.0344 | 285,248 | 22,920 | -3.5% |
 | compress/1MiB-array | 22.1698 | 21.9396 | 293,488 | 22,928 | -1.0% |
@@ -71,7 +71,7 @@ message visibility and is not a pure throughput regression on equal behavior.
 
 <!-- markdownlint-disable MD013 -->
 | Probe | Before | After |
-|---|---:|---:|
+| --- | ---: | ---: |
 | Payload bytes returned before requesting a withheld checksum trailer | 17,029 / 50,000 | 50,000 / 50,000 |
 | Seven-byte message readable after Flush, before Finish | 0 | 7 |
 | 8 MiB caller input retained after Write | yes | no |
@@ -108,7 +108,8 @@ dotnet build zlib.net.csproj -c Release
 # Save this DLL outside the checkout before applying the changes if testing a baseline.
 dotnet run --project benchmarks/zlib.net.StreamMemory.Perf -c Release -- results.json
 # Override LibraryPath with an absolute path to a saved v2.0.2 DLL:
-dotnet run --project benchmarks/zlib.net.StreamMemory.Perf -c Release -p:LibraryPath=C:/path/to/baseline/zlib.net.dll -- baseline.json
+dotnet run --project benchmarks/zlib.net.StreamMemory.Perf -c Release `
+  -p:LibraryPath=C:/path/to/baseline/zlib.net.dll -- baseline.json
 ```
 
 The runner discovers the new Reset method once by reflection and skips reuse

@@ -259,7 +259,7 @@ namespace ComponentAce.Compression.Libs.zlib
         }
 
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
-        // Large inputs are fed through a bounded pooled buffer instead of renting one as big as the input.
+        // Decompression spans and non-array Memory use bounded staging buffers.
         private const int SpanChunkSize = 16 * 1024;
 
         /// <inheritdoc />

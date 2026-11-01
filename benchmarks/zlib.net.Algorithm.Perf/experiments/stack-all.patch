@@ -1,0 +1,65 @@
+--- a/InfTree.cs
++++ b/InfTree.cs
+@@ -85,13 +85,19 @@
+ 		// Owned by one inflate stream; never shared between concurrent decoders.
+ 		internal sealed class Workspace
+ 		{
++#if !(NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER)
+ 			internal readonly int[] Counts = new int[BMAX + 1], Stack = new int[BMAX], Offsets = new int[BMAX + 1];
+ 			internal readonly int[] Values = new int[288];
++#endif
+ 			internal readonly int[] Used = new int[1];
+ 			internal readonly int[] LiteralBits = new int[1], DistanceBits = new int[1], LiteralTable = new int[1], DistanceTable = new int[1];
+ 		}
+ 
++#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
++		internal static int huft_build(int[] b, int bindex, int n, int s, int[] d, int[] e, int[] t, int[] m, int[] hp, int[] hn, Span<int> v, Workspace work)
++#else
+ 		internal static int huft_build(int[] b, int bindex, int n, int s, int[] d, int[] e, int[] t, int[] m, int[] hp, int[] hn, int[] v, Workspace work)
++#endif
+ 		{
+ 			// Given a list of code lengths and a maximum table size, make a set of
+ 			// tables to decode that set of codes.  Return Z_OK on success, Z_BUF_ERROR
+@@ -100,10 +106,18 @@
+ 			// lengths), or Z_MEM_ERROR if not enough memory.
+ 			
+ 			int a; // counter for codes of length k
++#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
++			// Only this synchronous tree build uses these buffers; no stack allocation is in a loop.
++			Span<int> c = stackalloc int[BMAX + 1];
++			c.Clear(); // counts must start at zero, including on runtimes that skip local initialization
++			Span<int> u = stackalloc int[BMAX];
++			Span<int> x = stackalloc int[BMAX + 1];
++#else
+ 			int[] c = work.Counts;
+ 			Array.Clear(c, 0, c.Length);
+ 			int[] u = work.Stack;
+ 			int[] x = work.Offsets;
++#endif
+ 			int f; // i repeats in table every f entries
+ 			int g; // maximum code length
+ 			int h; // table level
+@@ -319,7 +333,11 @@
+ 		{
+ 			int r;
+ 			int[] hn = work.Used; hn[0] = 0; // hufts used in space
++#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
++			Span<int> v = stackalloc int[19];
++#else
+ 			int[] v = work.Values;
++#endif
+ 			
+ 			r = huft_build(c, 0, 19, 19, null, null, tb, bb, hp, hn, v, work);
+ 			
+@@ -339,7 +357,11 @@
+ 		{
+ 			int r;
+ 			int[] hn = work.Used; hn[0] = 0; // hufts used in space
++#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
++			Span<int> v = stackalloc int[288];
++#else
+ 			int[] v = work.Values;
++#endif
+ 			
+ 			// build literal/length tree
+ 			r = huft_build(c, 0, nl, 257, cplens, cplext, tl, bl, hp, hn, v, work);

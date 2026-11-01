@@ -21,8 +21,9 @@ the [JRuby-maintained fork](https://github.com/jruby/jzlib), and [native
 zlib](https://github.com/madler/zlib). This port has diverged; fixes must be
 checked against its state machine and managed buffers individually.
 
-The raw-DEFLATE terminal Huffman lookup correction follows [SharpCompress PR
-#118](https://github.com/adamhathcock/sharpcompress/pull/118): an available
+The raw-DEFLATE terminal Huffman lookup correction follows
+[SharpCompress PR #118](https://github.com/adamhathcock/sharpcompress/pull/118):
+an available
 terminal entry can require fewer bits than the table lookup width, so the
 decoder must not demand a dummy byte. Both length and distance lookups have the
 correction, with raw-stream regression coverage. Source attribution and
@@ -30,7 +31,7 @@ distribution notices are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 
 ## Installation
 
-```
+```powershell
 dotnet add package ZlibCore
 ```
 
@@ -51,7 +52,8 @@ using (var zout = new ZOutputStream(compressed, zlibConst.Z_DEFAULT_COMPRESSION)
 {
     zout.Write(data, 0, data.Length);
     zout.Finish();
-    result = compressed.ToArray(); // ZOutputStream disposes the target stream, so read it before disposing
+    // Read the target before ZOutputStream disposes it.
+    result = compressed.ToArray();
 }
 
 // Decompress
@@ -63,8 +65,9 @@ using (var zout = new ZOutputStream(decompressed))
     result = decompressed.ToArray();
 }
 
-// Async (netstandard2.1 / net8.0): DisposeAsync finishes the stream without blocking on the target
-await using (var zout = new ZOutputStream(target, zlibConst.Z_DEFAULT_COMPRESSION, leaveOpen: true))
+// DisposeAsync finishes without blocking on the target (netstandard2.1 / net8.0).
+await using (var zout = new ZOutputStream(target,
+    zlibConst.Z_DEFAULT_COMPRESSION, leaveOpen: true))
 {
     await zout.WriteAsync(data);
 }
@@ -203,7 +206,7 @@ including `stackalloc` and direct stored-block output.
 
 ## Building
 
-```
+```powershell
 dotnet test
 dotnet pack zlib.net.csproj -c Release
 ```

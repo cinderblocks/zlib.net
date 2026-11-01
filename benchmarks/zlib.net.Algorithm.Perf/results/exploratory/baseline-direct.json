@@ -1,0 +1,26 @@
+[
+  {
+    "Name": "decode-direct/stored/4096",
+    "Milliseconds": 0.11643282887077998,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "decode-direct/stored/65536",
+    "Milliseconds": 0.1153712802768166,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "decode-direct/stored/1048576",
+    "Milliseconds": 0.11838745562130178,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  }
+]
