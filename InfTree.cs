@@ -82,7 +82,15 @@ namespace ComponentAce.Compression.Libs.zlib
 		// If BMAX needs to be larger than 16, then h and x[] should be uLong.
 		internal const int BMAX = 15; // maximum bit length of any code
 		
-		internal static int huft_build(int[] b, int bindex, int n, int s, int[] d, int[] e, int[] t, int[] m, int[] hp, int[] hn, int[] v)
+		// Owned by one inflate stream; never shared between concurrent decoders.
+		internal sealed class Workspace
+		{
+			internal readonly int[] Counts = new int[BMAX + 1], Entry = new int[3], Stack = new int[BMAX], Offsets = new int[BMAX + 1];
+			internal readonly int[] Values = new int[288], Used = new int[1];
+			internal readonly int[] LiteralBits = new int[1], DistanceBits = new int[1], LiteralTable = new int[1], DistanceTable = new int[1];
+		}
+
+		internal static int huft_build(int[] b, int bindex, int n, int s, int[] d, int[] e, int[] t, int[] m, int[] hp, int[] hn, int[] v, Workspace work)
 		{
 			// Given a list of code lengths and a maximum table size, make a set of
 			// tables to decode that set of codes.  Return Z_OK on success, Z_BUF_ERROR
@@ -91,7 +99,8 @@ namespace ComponentAce.Compression.Libs.zlib
 			// lengths), or Z_MEM_ERROR if not enough memory.
 			
 			int a; // counter for codes of length k
-			int[] c = new int[BMAX + 1]; // bit length count table
+			int[] c = work.Counts;
+			Array.Clear(c, 0, c.Length); // bit length count table
 			int f; // i repeats in table every f entries
 			int g; // maximum code length
 			int h; // table level
@@ -102,10 +111,13 @@ namespace ComponentAce.Compression.Libs.zlib
 			int mask; // (1 << w) - 1, to avoid cc -O bug on HP
 			int p; // pointer into c[], b[], or v[]
 			int q; // points to current table
-			int[] r = new int[3]; // table entry for structure assignment
-			int[] u = new int[BMAX]; // table stack
+			int[] r = work.Entry;
+			Array.Clear(r, 0, r.Length); // table entry for structure assignment
+			int[] u = work.Stack;
+			Array.Clear(u, 0, u.Length); // table stack
 			int w; // bits before this table == (l * h)
-			int[] x = new int[BMAX + 1]; // bit offsets, then code stack
+			int[] x = work.Offsets;
+			Array.Clear(x, 0, x.Length); // bit offsets, then code stack
 			int xp; // pointer into x
 			int y; // number of dummy codes added
 			int z; // number of entries in current table
@@ -298,13 +310,13 @@ namespace ComponentAce.Compression.Libs.zlib
 			return y != 0 && g != 1?Z_BUF_ERROR:Z_OK;
 		}
 		
-		internal static int inflate_trees_bits(int[] c, int[] bb, int[] tb, int[] hp, ZStream z)
+		internal static int inflate_trees_bits(int[] c, int[] bb, int[] tb, int[] hp, ZStream z, Workspace work)
 		{
 			int r;
-			int[] hn = new int[1]; // hufts used in space
-			int[] v = new int[19]; // work area for huft_build 
+			int[] hn = work.Used; hn[0] = 0; // hufts used in space
+			int[] v = work.Values; // work area for huft_build 
 			
-			r = huft_build(c, 0, 19, 19, null, null, tb, bb, hp, hn, v);
+			r = huft_build(c, 0, 19, 19, null, null, tb, bb, hp, hn, v, work);
 			
 			if (r == Z_DATA_ERROR)
 			{
@@ -318,14 +330,14 @@ namespace ComponentAce.Compression.Libs.zlib
 			return r;
 		}
 		
-		internal static int inflate_trees_dynamic(int nl, int nd, int[] c, int[] bl, int[] bd, int[] tl, int[] td, int[] hp, ZStream z)
+		internal static int inflate_trees_dynamic(int nl, int nd, int[] c, int[] bl, int[] bd, int[] tl, int[] td, int[] hp, ZStream z, Workspace work)
 		{
 			int r;
-			int[] hn = new int[1]; // hufts used in space
-			int[] v = new int[288]; // work area for huft_build
+			int[] hn = work.Used; hn[0] = 0; // hufts used in space
+			int[] v = work.Values; // work area for huft_build
 			
 			// build literal/length tree
-			r = huft_build(c, 0, nl, 257, cplens, cplext, tl, bl, hp, hn, v);
+			r = huft_build(c, 0, nl, 257, cplens, cplext, tl, bl, hp, hn, v, work);
 			if (r != Z_OK || bl[0] == 0)
 			{
 				if (r == Z_DATA_ERROR)
@@ -341,7 +353,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 			
 			// build distance tree
-			r = huft_build(c, nl, nd, 0, cpdist, cpdext, td, bd, hp, hn, v);
+			r = huft_build(c, nl, nd, 0, cpdist, cpdext, td, bd, hp, hn, v, work);
 			
 			if (r != Z_OK || (bd[0] == 0 && nl > 257))
 			{

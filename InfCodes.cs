@@ -96,28 +96,21 @@ namespace ComponentAce.Compression.Libs.zlib
 		internal int[] dtree; // distance tree
 		internal int dtree_index; // distance tree
 		
-		internal InfCodes(int bl, int bd, int[] tl, int tl_index, int[] td, int td_index, ZStream z)
+		internal InfCodes(int bl, int bd, int[] tl, int tlIndex, int[] td, int tdIndex, ZStream z)
+		{
+			Init(bl, bd, tl, tlIndex, td, tdIndex);
+		}
+
+		internal void Init(int bl, int bd, int[] tl, int tlIndex, int[] td, int tdIndex)
 		{
 			mode = START;
-			lbits = (byte) bl;
-			dbits = (byte) bd;
-			ltree = tl;
-			ltree_index = tl_index;
-			dtree = td;
-			dtree_index = td_index;
+			lbits = (byte)bl; dbits = (byte)bd;
+			ltree = tl; ltree_index = tlIndex;
+			dtree = td; dtree_index = tdIndex;
+			tree = null;
+			len = dist = lit = need = get_Renamed = tree_index = 0;
 		}
-		
-		internal InfCodes(int bl, int bd, int[] tl, int[] td, ZStream z)
-		{
-			mode = START;
-			lbits = (byte) bl;
-			dbits = (byte) bd;
-			ltree = tl;
-			ltree_index = 0;
-			dtree = td;
-			dtree_index = 0;
-		}
-		
+
 		internal int proc(InfBlocks s, ZStream z, int r)
 		{
 			int j; // temporary storage
