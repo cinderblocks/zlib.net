@@ -131,31 +131,39 @@ namespace ComponentAce.Compression.Libs.zlib
 		public override int Read(byte[] buffer, int offset, int count)
 		{
 			Prepare(buffer, offset, count);
-			if (count == 0 || finished)
-				return 0;
-
-			while (Step(count))
+			try
 			{
-				if (z.avail_in == 0 && !nomoreinput)
-					SetInput(in_Renamed.Read(buf, 0, bufsize));
+				if (count == 0 || finished)
+					return 0;
+	
+				while (Step(count))
+				{
+					if (z.avail_in == 0 && !nomoreinput)
+						SetInput(in_Renamed.Read(buf, 0, bufsize));
+				}
+				return count - z.avail_out;
 			}
-			return count - z.avail_out;
+			finally { z.next_out = null; z.next_out_index = z.avail_out = 0; }
 		}
 
 		/// <inheritdoc />
 		public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
 		{
 			Prepare(buffer, offset, count);
-			if (count == 0 || finished)
-				return 0;
-
-			while (Step(count))
+			try
 			{
-				cancellationToken.ThrowIfCancellationRequested();
-				if (z.avail_in == 0 && !nomoreinput)
-					SetInput(await in_Renamed.ReadAsync(buf, 0, bufsize, cancellationToken).ConfigureAwait(false));
+				if (count == 0 || finished)
+					return 0;
+	
+				while (Step(count))
+				{
+					cancellationToken.ThrowIfCancellationRequested();
+					if (z.avail_in == 0 && !nomoreinput)
+						SetInput(await in_Renamed.ReadAsync(buf, 0, bufsize, cancellationToken).ConfigureAwait(false));
+				}
+				return count - z.avail_out;
 			}
-			return count - z.avail_out;
+			finally { z.next_out = null; z.next_out_index = z.avail_out = 0; }
 		}
 
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
@@ -216,9 +224,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			if (disposed)
 				return;
+			var source = in_Renamed;
 			ReleaseZlibState();
 			if (!leaveOpen)
-				await in_Renamed.DisposeAsync().ConfigureAwait(false);
+				await source.DisposeAsync().ConfigureAwait(false);
 		}
 #endif
 
@@ -304,9 +313,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			if (disposing && !disposed)
 			{
+				var source = in_Renamed;
 				ReleaseZlibState();
 				if (!leaveOpen)
-					in_Renamed.Dispose();
+					source.Dispose();
 			}
 			base.Dispose(disposing);
 		}
@@ -319,6 +329,8 @@ namespace ComponentAce.Compression.Libs.zlib
 			else
 				z.inflateEnd();
 			z.free();
+			in_Renamed = Stream.Null;
+			buf = Array.Empty<byte>();
 		}
 
 		/// <inheritdoc />

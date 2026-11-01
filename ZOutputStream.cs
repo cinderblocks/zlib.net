@@ -235,6 +235,14 @@ namespace ComponentAce.Compression.Libs.zlib
                 while (!finished && (z.avail_in > 0 || z.avail_out == 0));
             }
             catch { failed = true; throw; }
+            finally
+            {
+                // Writes either consume all input or fail permanently. Never retain a caller's array
+                // (or a pooled Span/Memory staging array) after the operation has completed.
+                z.next_in = Array.Empty<byte>();
+                z.next_in_index = z.avail_in = 0;
+                z.next_out = null;
+            }
         }
 
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
@@ -296,6 +304,14 @@ namespace ComponentAce.Compression.Libs.zlib
                 while (!finished && (z.avail_in > 0 || z.avail_out == 0));
             }
             catch { failed = true; throw; }
+            finally
+            {
+                // Writes either consume all input or fail permanently. Never retain a caller's array
+                // (or a pooled Span/Memory staging array) after the operation has completed.
+                z.next_in = Array.Empty<byte>();
+                z.next_in_index = z.avail_in = 0;
+                z.next_out = null;
+            }
         }
 
         /// <inheritdoc />
@@ -433,6 +449,8 @@ namespace ComponentAce.Compression.Libs.zlib
                 z.inflateEnd();
             }
             z.free();
+            buf = Array.Empty<byte>();
+            flushBuffer = null;
             z = null!; // the stream is unusable from here on; every public member checks for disposal first
         }
 
