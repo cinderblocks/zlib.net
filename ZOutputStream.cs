@@ -105,7 +105,8 @@ namespace ComponentAce.Compression.Libs.zlib
             InitBlock();
             this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
             this.leaveOpen = leaveOpen;
-            z.inflateInit();
+            if (z.inflateInit() != zlibConst.Z_OK)
+                throw new ZStreamException("Unable to initialize decompression.");
             compress = false;
         }
 
@@ -123,7 +124,9 @@ namespace ComponentAce.Compression.Libs.zlib
             InitBlock();
             this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
             this.leaveOpen = leaveOpen;
-            z.deflateInit(level);
+            if (level < -1 || level > 9) throw new ArgumentOutOfRangeException(nameof(level));
+            if (z.deflateInit(level) != zlibConst.Z_OK)
+                throw new ZStreamException("Unable to initialize compression.");
             compress = true;
         }
 
@@ -132,6 +135,13 @@ namespace ComponentAce.Compression.Libs.zlib
         {
             if (z == null || out_Renamed == null)
                 throw new ObjectDisposedException(GetType().Name);
+        }
+
+        private static void ValidateBuffer(byte[] buffer, int offset, int count)
+        {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || count > buffer.Length - offset) throw new ArgumentOutOfRangeException(nameof(count));
         }
 
         private void ThrowIfFailed()
@@ -187,6 +197,7 @@ namespace ComponentAce.Compression.Libs.zlib
         public override void Write(Byte[] b1, int off, int len)
         {
             ThrowIfDisposed();
+            ValidateBuffer(b1, off, len);
             if (len == 0)
                 return;
             ThrowIfCompleted();
@@ -243,6 +254,8 @@ namespace ComponentAce.Compression.Libs.zlib
         public override async System.Threading.Tasks.Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
         {
             ThrowIfDisposed();
+            ValidateBuffer(buffer, offset, count);
+            cancellationToken.ThrowIfCancellationRequested();
             if (count == 0)
                 return;
 
@@ -269,6 +282,7 @@ namespace ComponentAce.Compression.Libs.zlib
         public override async System.Threading.Tasks.ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, System.Threading.CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+            cancellationToken.ThrowIfCancellationRequested();
             if (buffer.Length == 0)
                 return;
 
