@@ -837,7 +837,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// only for the level=0 compression option.
 		// NOTE: this function should be optimized to avoid extra copying from
 		// window to pending_buf.
-		internal int deflate_stored(int flush, DeflateInput input)
+		internal int deflate_stored(int flush, in DeflateInput input)
 		{
 			// Stored blocks are limited to 0xffff bytes, pending_buf is limited
 			// to pending_buf_size, and each stored block has a 5 byte header:
@@ -1006,7 +1006,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		//    At least one byte has been read, or avail_in == 0; reads are
 		//    performed for at least two bytes (required for the zip translate_eol
 		//    option -- not supported here).
-		internal void  fill_window(DeflateInput input)
+		internal void  fill_window(in DeflateInput input)
 		{
 			int n;
 			int more; // Amount of free space at the end of the window.
@@ -1083,7 +1083,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// This function does not perform lazy evaluation of matches and inserts
 		// new strings in the dictionary only for unmatched strings or for short
 		// matches. It is used only for the fast compression options.
-		internal int deflate_fast(int flush, DeflateInput input)
+		internal int deflate_fast(int flush, in DeflateInput input)
 		{
 			//    short hash_head = 0; // head of the hash chain
 			int hash_head = 0; // head of the hash chain
@@ -1200,7 +1200,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// Same as above, but achieves better compression. We use a lazy
 		// evaluation for matches: a match is finally adopted only if there is
 		// no better match at the next window position.
-		internal int deflate_slow(int flush, DeflateInput input)
+		internal int deflate_slow(int flush, in DeflateInput input)
 		{
 			//    short hash_head = 0;    // head of hash chain
 			int hash_head = 0; // head of hash chain
@@ -1643,7 +1643,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			return deflate(strm, flush, new DeflateInput(strm.next_in));
 		}
 
-		internal int deflate(ZStream strm, int flush, DeflateInput input)
+		internal int deflate(ZStream strm, int flush, in DeflateInput input)
 		{
 			int old_flush;
 			

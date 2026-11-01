@@ -242,7 +242,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// this function so some applications may wish to modify it to avoid
 		// allocating a large strm->next_in buffer and copying from it.
 		// (See also flush_pending()).
-		internal int read_buf(byte[] buf, int start, int size, DeflateInput input)
+		internal int read_buf(byte[] buf, int start, int size, in DeflateInput input)
 		{
 			int len = avail_in;
 			

@@ -191,7 +191,7 @@ namespace ComponentAce.Compression.Libs.zlib
         private int Step(int mode, bool finishing, byte[] output, int size)
             => Step(mode, finishing, output, size, new DeflateInput(z.next_in));
 
-        private int Step(int mode, bool finishing, byte[] output, int size, DeflateInput input)
+        private int Step(int mode, bool finishing, byte[] output, int size, in DeflateInput input)
         {
             int before = z.avail_in;
             z.next_out = output;
