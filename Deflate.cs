@@ -290,7 +290,6 @@ namespace ComponentAce.Compression.Libs.zlib
 
 		internal int opt_len; // bit length of current block with optimal trees
 		internal int static_len; // bit length of current block with static trees
-		internal int matches; // number of string matches in current block
 		internal int last_eob_len; // bit length of EOB code for last block
 		
 		// Output buffer. bits are inserted starting at the bottom (least
@@ -361,7 +360,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			dyn_ltree[END_BLOCK * 2] = 1;
 			opt_len = static_len = 0;
-			last_lit = matches = 0;
+			last_lit = 0;
 		}
 		
 		// Restore the heap property by moving down the tree starting at node k,
@@ -665,27 +664,14 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 			else
 			{
-				matches++;
 				// Here, lc is the match length - MIN_MATCH
 				dist--; // dist = match distance - 1
 				dyn_ltree[(Tree._length_code[lc] + LITERALS + 1) * 2]++;
 				dyn_dtree[Tree.d_code(dist) * 2]++;
 			}
 			
-			if ((last_lit & 0x1fff) == 0 && level > 2)
-			{
-				// Compute an upper bound for the compressed length
-				int out_length = last_lit * 8;
-				int in_length = strstart - block_start;
-				int dcode;
-				for (dcode = 0; dcode < D_CODES; dcode++)
-				{
-					out_length = (int) (out_length + dyn_dtree[dcode * 2] * (5L + Tree.extra_dbits[dcode]));
-				}
-				out_length = SupportClass.URShift(out_length, 3);
-				if ((matches < (last_lit / 2)) && out_length < in_length / 2)
-					return true;
-			}
+			// Native zlib's optional TRUNCATE_BLOCK heuristic was unconditional in this port.
+			// Let symbol capacity (or the caller's flush) end a block instead of guessing its cost.
 			
 			return (last_lit == lit_bufsize - 1);
 			// We avoid equality with lit_bufsize because of wraparound at 64K
