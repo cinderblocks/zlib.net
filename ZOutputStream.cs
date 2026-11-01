@@ -79,7 +79,7 @@ namespace ComponentAce.Compression.Libs.zlib
         /// <summary>The underlying zlib stream.</summary>
         protected internal ZStream z = new ZStream();
         /// <summary>The size of the output buffer.</summary>
-        protected internal int bufsize = 4096;
+        protected internal int bufsize = 16 * 1024;
         /// <summary>Backing field of <see cref="FlushMode"/>.</summary>
         protected internal int flush_Renamed_Field;
         /// <summary>Output buffers.</summary>
@@ -89,6 +89,8 @@ namespace ComponentAce.Compression.Libs.zlib
 
         private System.IO.Stream? out_Renamed;
         private readonly bool leaveOpen;
+        private bool finished;
+        private bool failed;
 
         /// <summary> Creates a stream that inflates everything written to it into <paramref name="out_Renamed"/>.</summary>
         public ZOutputStream(System.IO.Stream out_Renamed) : this(out_Renamed, false)
@@ -98,12 +100,20 @@ namespace ComponentAce.Compression.Libs.zlib
         /// <summary> Creates a stream that inflates everything written to it into <paramref name="out_Renamed"/>.</summary>
         /// <param name="out_Renamed">The stream that receives the inflated data.</param>
         /// <param name="leaveOpen">true to leave <paramref name="out_Renamed"/> open when this stream is disposed.</param>
-        public ZOutputStream(System.IO.Stream out_Renamed, bool leaveOpen)
+        public ZOutputStream(System.IO.Stream out_Renamed, bool leaveOpen) : this(out_Renamed, leaveOpen, 16 * 1024)
         {
+        }
+
+        /// <summary>Creates a decompression stream with a positive output buffer size, in bytes.</summary>
+        public ZOutputStream(System.IO.Stream out_Renamed, bool leaveOpen, int bufferSize)
+        {
+            if (bufferSize <= 0) throw new ArgumentOutOfRangeException(nameof(bufferSize));
+            bufsize = bufferSize;
             InitBlock();
             this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
             this.leaveOpen = leaveOpen;
-            z.inflateInit();
+            if (z.inflateInit() != zlibConst.Z_OK)
+                throw new ZStreamException("Unable to initialize decompression.");
             compress = false;
         }
 
@@ -116,12 +126,21 @@ namespace ComponentAce.Compression.Libs.zlib
         /// <param name="out_Renamed">The stream that receives the deflated data.</param>
         /// <param name="level">The compression level, 0 (none) to 9 (best), or <see cref="zlibConst.Z_DEFAULT_COMPRESSION"/>.</param>
         /// <param name="leaveOpen">true to leave <paramref name="out_Renamed"/> open when this stream is disposed.</param>
-        public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen)
+        public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen) : this(out_Renamed, level, leaveOpen, 16 * 1024)
         {
+        }
+
+        /// <summary>Creates a compression stream with a positive output buffer size, in bytes.</summary>
+        public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen, int bufferSize)
+        {
+            if (bufferSize <= 0) throw new ArgumentOutOfRangeException(nameof(bufferSize));
+            bufsize = bufferSize;
             InitBlock();
             this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
             this.leaveOpen = leaveOpen;
-            z.deflateInit(level);
+            if (level < -1 || level > 9) throw new ArgumentOutOfRangeException(nameof(level));
+            if (z.deflateInit(level) != zlibConst.Z_OK)
+                throw new ZStreamException("Unable to initialize compression.");
             compress = true;
         }
 
@@ -130,6 +149,53 @@ namespace ComponentAce.Compression.Libs.zlib
         {
             if (z == null || out_Renamed == null)
                 throw new ObjectDisposedException(GetType().Name);
+        }
+
+        private static void ValidateBuffer(byte[] buffer, int offset, int count)
+        {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || offset > buffer.Length) throw new ArgumentOutOfRangeException(nameof(offset));
+            if (count < 0 || count > buffer.Length - offset) throw new ArgumentOutOfRangeException(nameof(count));
+        }
+
+        private void ThrowIfFailed()
+        {
+            if (failed) throw new InvalidOperationException("The stream failed and cannot be reused.");
+        }
+
+        private void ThrowIfCompleted()
+        {
+            ThrowIfFailed();
+            if (finished)
+            {
+                if (!compress) throw new ZStreamException("Trailing data after the compressed stream.");
+                throw new InvalidOperationException("The compressed stream has already ended.");
+            }
+        }
+
+        // One codec step, shared by sync and async callers. Every iteration must consume input,
+        // produce output, or end the stream; otherwise a corrupt/truncated stream could spin forever.
+        private int Step(int mode, bool finishing)
+        {
+            int before = z.avail_in;
+            z.next_out = buf;
+            z.next_out_index = 0;
+            z.avail_out = bufsize;
+            int status = compress ? z.deflate(mode) : z.inflate(mode);
+            int produced = bufsize - z.avail_out;
+            if (status == zlibConst.Z_STREAM_END)
+            {
+                finished = true;
+                if (z.avail_in != 0)
+                    throw new ZStreamException("Trailing data after the compressed stream.");
+            }
+            else if (status != zlibConst.Z_OK &&
+                     !(status == zlibConst.Z_BUF_ERROR && !finishing && z.avail_in == 0 && produced == 0))
+                throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
+
+            if (!finished && before == z.avail_in && produced == 0 && (finishing || z.avail_in != 0))
+                throw new ZStreamException("The compression engine made no progress.");
+            return produced;
         }
 
         /// <summary>Writes a single byte.</summary>
@@ -149,23 +215,23 @@ namespace ComponentAce.Compression.Libs.zlib
         public override void Write(Byte[] b1, int off, int len)
         {
             ThrowIfDisposed();
+            ValidateBuffer(b1, off, len);
             if (len == 0)
                 return;
-            int err;
+            ThrowIfCompleted();
             z.next_in = b1;
             z.next_in_index = off;
             z.avail_in = len;
-            do
+            try
             {
-                z.next_out = buf;
-                z.next_out_index = 0;
-                z.avail_out = bufsize;
-                err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
-                if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
-                    throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
-                out_Renamed!.Write(buf, 0, bufsize - z.avail_out);
+                do
+                {
+                    int produced = Step(flush_Renamed_Field, false);
+                    if (produced > 0) out_Renamed!.Write(buf, 0, produced);
+                }
+                while (!finished && (z.avail_in > 0 || z.avail_out == 0));
             }
-            while (z.avail_in > 0 || z.avail_out == 0);
+            catch { failed = true; throw; }
         }
 
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
@@ -206,33 +272,34 @@ namespace ComponentAce.Compression.Libs.zlib
         public override async System.Threading.Tasks.Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
         {
             ThrowIfDisposed();
+            ValidateBuffer(buffer, offset, count);
+            cancellationToken.ThrowIfCancellationRequested();
             if (count == 0)
                 return;
 
+            ThrowIfCompleted();
             z.next_in = buffer;
             z.next_in_index = offset;
             z.avail_in = count;
-
-            int err;
-            do
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                z.next_out = buf;
-                z.next_out_index = 0;
-                z.avail_out = bufsize;
-                err = compress ? z.deflate(flush_Renamed_Field) : z.inflate(flush_Renamed_Field);
-                if (err != zlibConst.Z_OK && err != zlibConst.Z_STREAM_END)
-                    throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
-                await out_Renamed!.WriteAsync(buf, 0, bufsize - z.avail_out, cancellationToken).ConfigureAwait(false);
+                do
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    int produced = Step(flush_Renamed_Field, false);
+                    if (produced > 0)
+                        await out_Renamed!.WriteAsync(buf, 0, produced, cancellationToken).ConfigureAwait(false);
+                }
+                while (!finished && (z.avail_in > 0 || z.avail_out == 0));
             }
-            while (z.avail_in > 0 || z.avail_out == 0);
+            catch { failed = true; throw; }
         }
 
         /// <inheritdoc />
         public override async System.Threading.Tasks.ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, System.Threading.CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+            cancellationToken.ThrowIfCancellationRequested();
             if (buffer.Length == 0)
                 return;
 
@@ -270,36 +337,25 @@ namespace ComponentAce.Compression.Libs.zlib
         public async System.Threading.Tasks.ValueTask FinishAsync(System.Threading.CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            do
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                z.next_out = buf;
-                z.next_out_index = 0;
-                z.avail_out = bufsize;
-                int err = compress ? z.deflate(zlibConst.Z_FINISH) : z.inflate(zlibConst.Z_FINISH);
-                if (err != zlibConst.Z_STREAM_END && err != zlibConst.Z_OK)
-                    throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
-                if (bufsize - z.avail_out > 0)
-                {
-                    await out_Renamed!.WriteAsync(new ReadOnlyMemory<byte>(buf, 0, bufsize - z.avail_out), cancellationToken).ConfigureAwait(false);
-                }
-            }
-            while (z.avail_in > 0 || z.avail_out == 0);
-
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfFailed();
             try
             {
+                while (!finished)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    int produced = Step(zlibConst.Z_FINISH, true);
+                    if (produced > 0)
+                        await out_Renamed!.WriteAsync(new ReadOnlyMemory<byte>(buf, 0, produced), cancellationToken).ConfigureAwait(false);
+                }
                 await FlushAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch
-            {
-            }
+            catch { failed = true; throw; }
         }
 
         /// <summary>
         /// Asynchronously finishes the stream and releases it, like <see cref="Dispose(bool)"/> but without blocking on the
-        /// underlying stream. As with Dispose, an error while finishing is not thrown; call <see cref="FinishAsync"/> first
-        /// to observe it.
+        /// underlying stream. Finalization and output errors are propagated after releasing the codec state.
         /// </summary>
         public override async System.Threading.Tasks.ValueTask DisposeAsync()
         {
@@ -309,10 +365,7 @@ namespace ComponentAce.Compression.Libs.zlib
 
             try
             {
-                await FinishAsync().ConfigureAwait(false);
-            }
-            catch
-            {
+                if (!failed && z != null) await FinishAsync().ConfigureAwait(false);
             }
             finally
             {
@@ -328,27 +381,17 @@ namespace ComponentAce.Compression.Libs.zlib
         public virtual void Finish()
         {
             ThrowIfDisposed();
-            do
-            {
-                z.next_out = buf;
-                z.next_out_index = 0;
-                z.avail_out = bufsize;
-                int err = compress ? z.deflate(zlibConst.Z_FINISH) : z.inflate(zlibConst.Z_FINISH);
-                if (err != zlibConst.Z_STREAM_END && err != zlibConst.Z_OK)
-                    throw new ZStreamException((compress ? "de" : "in") + "flating: " + z.msg);
-                if (bufsize - z.avail_out > 0)
-                {
-                    out_Renamed!.Write(buf, 0, bufsize - z.avail_out);
-                }
-            }
-            while (z.avail_in > 0 || z.avail_out == 0);
+            ThrowIfFailed();
             try
             {
+                while (!finished)
+                {
+                    int produced = Step(zlibConst.Z_FINISH, true);
+                    if (produced > 0) out_Renamed!.Write(buf, 0, produced);
+                }
                 Flush();
             }
-            catch
-            {
-            }
+            catch { failed = true; throw; }
         }
         /// <summary>Obsolete spelling of <see cref="Finish"/>.</summary>
         [Obsolete("Use Finish().")]
@@ -383,17 +426,15 @@ namespace ComponentAce.Compression.Libs.zlib
             {
                 try
                 {
-                    Finish();
-                }
-                catch
-                {
+                    if (!failed && z != null) Finish();
                 }
                 finally
                 {
+                    var output = out_Renamed;
                     End();
-                    if (!leaveOpen)
-                        out_Renamed.Dispose();
                     out_Renamed = null;
+                    if (!leaveOpen)
+                        output.Dispose();
                 }
             }
         }

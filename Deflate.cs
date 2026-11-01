@@ -262,7 +262,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// Depth of each subtree used as tie breaker for trees of equal frequency
 		internal byte[] depth = new byte[2 * L_CODES + 1];
 		
-		internal int l_buf; // index for literals or lengths */
+		internal int symbol_buf; // triples: high distance, low distance, literal/length
 		
 		// Size of match buffer for literals/lengths.  There are 4 reasons for
 		// limiting lit_bufsize to 64K:
@@ -283,14 +283,9 @@ namespace ComponentAce.Compression.Libs.zlib
 		//   - I can't count above 4
 		internal int lit_bufsize;
 		
-		internal int last_lit; // running index in l_buf
+		internal int last_lit; // number of buffered symbols
 		
-		// Buffer for distances. To simplify the code, d_buf and l_buf have
-		// the same number of elements. To use different lengths, an extra flag
-		// array would be necessary.
-		
-		internal int d_buf; // index of pendig_buf
-		
+
 		internal int opt_len; // bit length of current block with optimal trees
 		internal int static_len; // bit length of current block with static trees
 		internal int matches; // number of string matches in current block
@@ -660,10 +655,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		internal bool _tr_tally(int dist, int lc)
 		{
 			
-			pending_buf[d_buf + last_lit * 2] = (byte) (SupportClass.URShift(dist, 8));
-			pending_buf[d_buf + last_lit * 2 + 1] = (byte) dist;
+			pending_buf[symbol_buf + last_lit * 3] = (byte) (SupportClass.URShift(dist, 8));
+			pending_buf[symbol_buf + last_lit * 3 + 1] = (byte) dist;
 			
-			pending_buf[l_buf + last_lit] = (byte) lc; last_lit++;
+			pending_buf[symbol_buf + last_lit * 3 + 2] = (byte) lc; last_lit++;
 			
 			if (dist == 0)
 			{
@@ -705,7 +700,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			int dist; // distance of matched string
 			int lc; // match length or unmatched char (if dist == 0)
-			int lx = 0; // running index in l_buf
+			int lx = 0; // running symbol index
 			int code; // the code to send
 			int extra; // number of extra bits to send
 			
@@ -713,8 +708,8 @@ namespace ComponentAce.Compression.Libs.zlib
 			{
 				do 
 				{
-					dist = ((pending_buf[d_buf + lx * 2] << 8) & 0xff00) | (pending_buf[d_buf + lx * 2 + 1] & 0xff);
-					lc = (pending_buf[l_buf + lx]) & 0xff; lx++;
+					dist = ((pending_buf[symbol_buf + lx * 3] << 8) & 0xff00) | (pending_buf[symbol_buf + lx * 3 + 1] & 0xff);
+					lc = (pending_buf[symbol_buf + lx * 3 + 2]) & 0xff; lx++;
 					
 					if (dist == 0)
 					{
@@ -744,7 +739,7 @@ namespace ComponentAce.Compression.Libs.zlib
 						}
 					} // literal or match pair ?
 					
-					// Check that the overlay between pending_buf and d_buf+l_buf is ok:
+					// Consuming a symbol frees three bytes before the next unread symbol.
 				}
 				while (lx < last_lit);
 			}
@@ -1502,13 +1497,14 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			lit_bufsize = 1 << (memLevel + 6); // 16K elements by default
 			
-			// We overlay pending_buf and d_buf+l_buf. This works since the average
-			// output size for (length,distance) codes is <= 24 bits.
+			// Interleave three-byte symbols in the last 3/4 of the pending buffer.
+			// Each consumed symbol frees three bytes; a fixed code uses at most 31 bits.
+			// With one byte of headroom per symbol, output cannot overtake unread symbols.
+			// Separate distance and literal regions did not satisfy this invariant.
 			pending_buf = new byte[lit_bufsize * 4];
 			pending_buf_size = lit_bufsize * 4;
 			
-			d_buf = lit_bufsize;
-			l_buf = (1 + 2) * lit_bufsize;
+			symbol_buf = lit_bufsize;
 			
 			this.level = level;
 			

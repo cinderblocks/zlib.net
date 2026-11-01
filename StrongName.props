@@ -1,0 +1,10 @@
+<Project>
+  <!-- Public source-distribution key: strong names establish assembly identity, not publisher trust.
+       Keep this key stable across releases. All friend assemblies must use its full public key. -->
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>false</DelaySign>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)zlib.snk</AssemblyOriginatorKeyFile>
+    <ZlibPublicKey>0024000004800000940000000602000000240000525341310004000001000100296586614022cf39fe606c7a8efbdbda36ba9f7731b3efed9f8d3fa01eae5ee6460da29e2f74e7f97ea073075e6e63bf26fa898d261f60ab16483f1dcfcceb5e419fdfc482925a45781c0334e1dba5e2f0c47ec8711fc0081ae3295395941392f2c3781a71ce982bbc974b10049b2c1fb7f81a5c68e2dfe53a03625dc6dac6ab</ZlibPublicKey>
+  </PropertyGroup>
+</Project>

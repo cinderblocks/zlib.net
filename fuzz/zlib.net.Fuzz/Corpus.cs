@@ -45,6 +45,12 @@ namespace zlib.net.Fuzz
             File.WriteAllBytes(Path.Combine(inflate, "stored-len-mismatch"), Prefix(0x00, new byte[] { 0x78, 0x9C, 0x01, 0x05, 0x00, 0x00, 0x00 }));
             File.WriteAllBytes(Path.Combine(inflate, "distance-too-far"), Prefix(0x00, new byte[] { 0x78, 0x9C, 0x03, 0x01, 0x00 }));
 
+            File.WriteAllBytes(Path.Combine(inflate, "invalid-history-matching-checksum"), Prefix(0x03,
+                new byte[] { 0x78, 0x9c, 0x03, 0x02, 0x00, 0x00, 0x03, 0x00, 0x01 }));
+            var trailing = new List<byte>(Deflate(samples["one-byte"], 6)) { 42 };
+            for (byte config = 0; config < 4; config++)
+                File.WriteAllBytes(Path.Combine(inflate, $"trailing-data-{config}"), Prefix(config, trailing.ToArray()));
+
             // A truncated stream.
             byte[] whole = Deflate(samples["text"], 6);
             var truncated = new byte[whole.Length / 2];

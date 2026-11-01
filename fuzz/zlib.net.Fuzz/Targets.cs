@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using ComponentAce.Compression.Libs.zlib;
 
 namespace zlib.net.Fuzz
@@ -51,10 +52,12 @@ namespace zlib.net.Fuzz
             int chunk = config % 4 == 0 ? 1 : config % 4 == 1 ? 7 : config % 4 == 2 ? 512 : Math.Max(1, data.Length);
             try
             {
-                using var zout = new ZOutputStream(new LimitedSink(limit, StopAfter), leaveOpen: true);
+                using var sink = new LimitedSink(limit, StopAfter);
+                using var zout = new ZOutputStream(sink, leaveOpen: true);
                 for (int off = 0; off < data.Length; off += chunk)
                     zout.Write(data, off, Math.Min(chunk, data.Length - off));
                 zout.Finish();
+                VerifyAccepted(data, sink);
             }
             catch (ZStreamException)
             {
@@ -67,11 +70,12 @@ namespace zlib.net.Fuzz
             try
             {
                 using var zin = new ZInputStream(new MemoryStream(data));
-                var sink = new LimitedSink(limit, StopAfter);
+                using var sink = new LimitedSink(limit, StopAfter);
                 var buffer = new byte[readSize];
                 int n;
                 while ((n = zin.Read(buffer, 0, buffer.Length)) > 0)
                     sink.Write(buffer, 0, n);
+                VerifyAccepted(data, sink);
             }
             catch (ZStreamException)
             {
@@ -121,6 +125,24 @@ namespace zlib.net.Fuzz
             }
         }
 
+        // A successful managed decode must agree with an independent implementation. The platform
+        // may accept trailing data or truncation that we reject, so only compare accepted managed inputs.
+        private static void VerifyAccepted(byte[] data, LimitedSink actual)
+        {
+            using var expected = new LimitedSink(actual.Count, long.MaxValue);
+            try
+            {
+                using var platform = new ZLibStream(new MemoryStream(data), CompressionMode.Decompress);
+                platform.CopyTo(expected);
+            }
+            catch (InvalidDataException e)
+            {
+                throw new InvalidOperationException("Managed inflate accepted data rejected by platform zlib.", e);
+            }
+            Require(expected.Count == actual.Count && expected.Digest().AsSpan().SequenceEqual(actual.Digest()),
+                    "Managed inflate disagreed with platform zlib.");
+        }
+
         private static void Require(bool condition, string message)
         {
             if (!condition)
@@ -132,6 +154,10 @@ namespace zlib.net.Fuzz
             private readonly long limit;
             private readonly long stopAfter;
             private long written;
+            private readonly IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            public long Count => written;
+            public byte[] Digest() => hash.GetHashAndReset();
+            protected override void Dispose(bool disposing) { if (disposing) hash.Dispose(); base.Dispose(disposing); }
             public LimitedSink(long limit, long stopAfter) { this.limit = limit; this.stopAfter = stopAfter; }
 
             public override void Write(byte[] buffer, int offset, int count)
@@ -141,6 +167,7 @@ namespace zlib.net.Fuzz
                     throw new InvalidOperationException($"output exceeded {limit} bytes");
                 if (written > stopAfter)
                     throw new EnoughOutputException();
+                hash.AppendData(buffer, offset, count);
             }
 
             public override void Flush() { }

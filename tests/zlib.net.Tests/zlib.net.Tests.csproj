@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../StrongName.props" />
   <PropertyGroup>
     <TargetFrameworks>net8.0</TargetFrameworks>
     <!-- Also exercise the netstandard2.0 asset on .NET Framework where it is available. -->

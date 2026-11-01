@@ -97,7 +97,8 @@ namespace ComponentAce.Compression.Libs.zlib
 		public ZInputStream(Stream in_Renamed, bool leaveOpen)
 		{
 			Init(in_Renamed, leaveOpen);
-			z.inflateInit();
+			if (z.inflateInit() != zlibConst.Z_OK)
+				throw new ZStreamException("Unable to initialize decompression.");
 			compress = false;
 		}
 
@@ -110,7 +111,9 @@ namespace ComponentAce.Compression.Libs.zlib
 		public ZInputStream(Stream in_Renamed, int level, bool leaveOpen)
 		{
 			Init(in_Renamed, leaveOpen);
-			z.deflateInit(level);
+			if (level < -1 || level > 9) throw new ArgumentOutOfRangeException(nameof(level));
+			if (z.deflateInit(level) != zlibConst.Z_OK)
+				throw new ZStreamException("Unable to initialize compression.");
 			compress = true;
 		}
 

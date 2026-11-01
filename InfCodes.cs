@@ -130,7 +130,6 @@ namespace ComponentAce.Compression.Libs.zlib
 			int n; // bytes available there
 			int q; // output window write pointer
 			int m; // bytes to end of window or read pointer
-			int f; // pointer to copy strings from
 			
 			// copy input/output information to locals (UPDATE macro restores)
 			p = z.next_in_index; n = z.avail_in; b = s.bitb; k = s.bitk;
@@ -177,6 +176,11 @@ namespace ComponentAce.Compression.Libs.zlib
 								r = Z_OK;
 							else
 							{
+								// A terminal entry can require fewer bits than the table lookup width.
+								// With no more input, decode only if the entry is fully buffered.
+								// Same correction as SharpCompress PR #118 (LEN and DIST).
+								int partial = (tree_index + (b & inflate_mask[k])) * 3;
+								if (k >= tree[partial + 1]) break;
 								
 								s.bitb = b; s.bitk = k;
 								z.avail_in = n; z.total_in += p - z.next_in_index; z.next_in_index = p;
@@ -272,6 +276,11 @@ namespace ComponentAce.Compression.Libs.zlib
 								r = Z_OK;
 							else
 							{
+								// A terminal entry can require fewer bits than the table lookup width.
+								// With no more input, decode only if the entry is fully buffered.
+								// Same correction as SharpCompress PR #118 (LEN and DIST).
+								int partial = (tree_index + (b & inflate_mask[k])) * 3;
+								if (k >= tree[partial + 1]) break;
 								
 								s.bitb = b; s.bitk = k;
 								z.avail_in = n; z.total_in += p - z.next_in_index; z.next_in_index = p;
@@ -337,16 +346,16 @@ namespace ComponentAce.Compression.Libs.zlib
 						b >>= j;
 						k -= j;
 						
+						if (dist > s.history)
+						{
+							z.msg = "invalid distance too far back";
+							mode = BADCODE;
+							goto case BADCODE;
+						}
 						mode = COPY;
 						goto case COPY;
 					
 					case COPY:  // o: copying bytes in window, waiting for space
-						f = q - dist;
-						while (f < 0)
-						{
-							// modulo window size-"while" instead
-							f += s.end; // of "if" handles invalid distances
-						}
 						while (len != 0)
 						{
 							
@@ -376,11 +385,9 @@ namespace ComponentAce.Compression.Libs.zlib
 								}
 							}
 							
-							s.window[q++] = s.window[f++]; m--;
-							
-							if (f == s.end)
-								f = 0;
-							len--;
+							int copied = Math.Min(len, m);
+							s.CopyMatch(q, dist, copied);
+							q += copied; m -= copied; len -= copied;
 						}
 						mode = START;
 						break;
@@ -413,6 +420,7 @@ namespace ComponentAce.Compression.Libs.zlib
 						r = Z_OK;
 						
 						s.window[q++] = (byte) lit; m--;
+						s.AddHistory(1);
 						
 						mode = START;
 						break;
@@ -496,7 +504,6 @@ namespace ComponentAce.Compression.Libs.zlib
 			int md; // mask for distance tree
 			int c; // bytes to copy
 			int d; // distance back to copy from
-			int r; // copy source pointer
 			
 			// load input, output, bit values
 			p = z.next_in_index; n = z.avail_in; b = s.bitb; k = s.bitk;
@@ -526,6 +533,7 @@ namespace ComponentAce.Compression.Libs.zlib
 					b >>= (tp[(tp_index + t) * 3 + 1]); k -= (tp[(tp_index + t) * 3 + 1]);
 					
 					s.window[q++] = (byte) tp[(tp_index + t) * 3 + 2];
+					s.AddHistory(1);
 					m--;
 					continue;
 				}
@@ -574,69 +582,18 @@ namespace ComponentAce.Compression.Libs.zlib
 								
 								b >>= (e); k -= (e);
 								
-								// do the copy
-								m -= c;
-								if (q >= d)
+								if (d > s.history)
 								{
-									// offset before dest
-									//  just copy
-									r = q - d;
-									if (q - r > 0 && 2 > (q - r))
-									{
-										s.window[q++] = s.window[r++]; c--; // minimum count is three,
-										s.window[q++] = s.window[r++]; c--; // so unroll loop a little
-									}
-									else
-									{
-										Array.Copy(s.window, r, s.window, q, 2);
-										q += 2; r += 2; c -= 2;
-									}
+									z.msg = "invalid distance too far back";
+									c = z.avail_in - n; c = Math.Min(k >> 3, c); n += c; p -= c; k -= c << 3;
+									s.bitb = b; s.bitk = k;
+									z.avail_in = n; z.total_in += p - z.next_in_index; z.next_in_index = p;
+									s.write = q;
+									return Z_DATA_ERROR;
 								}
-								else
-								{
-									// else offset after destination
-									r = q - d;
-									do 
-									{
-										r += s.end; // force pointer in window
-									}
-									while (r < 0); // covers invalid distances
-									e = s.end - r;
-									if (c > e)
-									{
-										// if source crosses,
-										c -= e; // wrapped copy
-										if (q - r > 0 && e > (q - r))
-										{
-											do 
-											{
-												s.window[q++] = s.window[r++];
-											}
-											while (--e != 0);
-										}
-										else
-										{
-											Array.Copy(s.window, r, s.window, q, e);
-											q += e; r += e; e = 0;
-										}
-										r = 0; // copy rest from start of window
-									}
-								}
-								
-								// copy all or what's left
-								if (q - r > 0 && c > (q - r))
-								{
-									do 
-									{
-										s.window[q++] = s.window[r++];
-									}
-									while (--c != 0);
-								}
-								else
-								{
-									Array.Copy(s.window, r, s.window, q, c);
-									q += c; r += c; c = 0;
-								}
+								s.CopyMatch(q, d, c);
+								m -= c; q += c;
+								c = 0;
 								break;
 							}
 							else if ((e & 64) == 0)
@@ -672,6 +629,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							b >>= (tp[(tp_index + t) * 3 + 1]); k -= (tp[(tp_index + t) * 3 + 1]);
 							
 							s.window[q++] = (byte) tp[(tp_index + t) * 3 + 2];
+					s.AddHistory(1);
 							m--;
 							break;
 						}

@@ -95,6 +95,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		internal int bitb; // bit buffer 
 		internal int[] hufts; // single malloc for tree space 
 		internal byte[] window; // sliding window 
+		internal int history; // initialized history bytes, including a preset dictionary
 		internal int end; // one byte after sliding window 
 		internal int read; // window read pointer 
 		internal int write; // window write pointer 
@@ -127,6 +128,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			bitk = 0;
 			bitb = 0;
 			read = write = 0;
+			history = 0;
 			
 			if (checkfn != null)
 				z.adler = check = Adler32.adler32(0L, null, 0, 0);
@@ -316,6 +318,7 @@ namespace ComponentAce.Compression.Libs.zlib
 						if (t > m)
 							t = m;
 						Array.Copy(z.next_in, p, window, q, t);
+						AddHistory(t);
 						p += t; n -= t;
 						q += t; m -= t;
 						if ((left -= t) != 0)
@@ -631,10 +634,36 @@ namespace ComponentAce.Compression.Libs.zlib
 			//ZFREE(z, s);
 		}
 		
+		// Copy an expanding DEFLATE match into a contiguous free section of the window.
+		// Seed at most one period from history (which may wrap), then double already-produced
+		// bytes. Each Array.Copy reads initialized bytes and never needs memmove-style expansion.
+		internal void CopyMatch(int destination, int distance, int count)
+		{
+			int source = destination - distance;
+			if (source < 0) source += end;
+			int seed = Math.Min(distance, count);
+			int first = Math.Min(seed, end - source);
+			Array.Copy(window, source, window, destination, first);
+			if (first < seed) Array.Copy(window, 0, window, destination + first, seed - first);
+			for (int copied = seed; copied < count;)
+			{
+				int next = Math.Min(copied, count - copied);
+				Array.Copy(window, destination, window, destination + copied, next);
+				copied += next;
+			}
+			AddHistory(count);
+		}
+
+		internal void AddHistory(int count)
+		{
+			history = Math.Min(end, history + count);
+		}
+
 		internal void  set_dictionary(byte[] d, int start, int n)
 		{
 			Array.Copy(d, start, window, 0, n);
 			read = write = n;
+			history = n;
 		}
 		
 		// Returns true if inflate is currently at the end of a block generated
