@@ -317,22 +317,14 @@ namespace ComponentAce.Compression.Libs.zlib
                     if (produced > 0)
                         await out_Renamed!.WriteAsync(new ReadOnlyMemory<byte>(buf, 0, produced), cancellationToken).ConfigureAwait(false);
                 }
-            }
-            catch { failed = true; throw; }
-
-            try
-            {
                 await FlushAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch
-            {
-            }
+            catch { failed = true; throw; }
         }
 
         /// <summary>
         /// Asynchronously finishes the stream and releases it, like <see cref="Dispose(bool)"/> but without blocking on the
-        /// underlying stream. As with Dispose, an error while finishing is not thrown; call <see cref="FinishAsync"/> first
-        /// to observe it.
+        /// underlying stream. Finalization and output errors are propagated after releasing the codec state.
         /// </summary>
         public override async System.Threading.Tasks.ValueTask DisposeAsync()
         {
@@ -343,9 +335,6 @@ namespace ComponentAce.Compression.Libs.zlib
             try
             {
                 if (!failed && z != null) await FinishAsync().ConfigureAwait(false);
-            }
-            catch
-            {
             }
             finally
             {
@@ -369,15 +358,9 @@ namespace ComponentAce.Compression.Libs.zlib
                     int produced = Step(zlibConst.Z_FINISH, true);
                     if (produced > 0) out_Renamed!.Write(buf, 0, produced);
                 }
-            }
-            catch { failed = true; throw; }
-            try
-            {
                 Flush();
             }
-            catch
-            {
-            }
+            catch { failed = true; throw; }
         }
         /// <summary>Obsolete spelling of <see cref="Finish"/>.</summary>
         [Obsolete("Use Finish().")]
@@ -414,15 +397,13 @@ namespace ComponentAce.Compression.Libs.zlib
                 {
                     if (!failed && z != null) Finish();
                 }
-                catch
-                {
-                }
                 finally
                 {
+                    var output = out_Renamed;
                     End();
-                    if (!leaveOpen)
-                        out_Renamed.Dispose();
                     out_Renamed = null;
+                    if (!leaveOpen)
+                        output.Dispose();
                 }
             }
         }
