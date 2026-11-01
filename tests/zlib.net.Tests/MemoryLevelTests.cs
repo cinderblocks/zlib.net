@@ -15,7 +15,7 @@ namespace zlib.net.Tests
         public void EveryMemoryLevelRoundtripsAndResets(int level)
         {
             foreach (int memory in new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 })
-            foreach (byte[] data in new[] { TestData.Text(90000), TestData.Random(70000), TestData.Mixed(130000), Array.Empty<byte>() })
+            { foreach (byte[] data in new[] { TestData.Text(90000), TestData.Random(70000), TestData.Mixed(130000), Array.Empty<byte>() })
             {
                 using var sink = new MemoryStream();
                 using var z = new ZOutputStream(sink, level, true, 113, memory);
@@ -23,7 +23,7 @@ namespace zlib.net.Tests
                 {
                     if (pass != 0) { z.Reset(); sink.SetLength(0); sink.Position = 0; }
                     for (int start = 0; start < data.Length; start += 1997)
-                        z.Write(data, start, Math.Min(1997, data.Length - start));
+                        { z.Write(data, start, Math.Min(1997, data.Length - start)); }
                     z.Finish();
                     using var decoder = new ZInputStream(new MemoryStream(sink.ToArray()));
                     using var actual = new MemoryStream(); decoder.CopyTo(actual);
@@ -34,7 +34,7 @@ namespace zlib.net.Tests
                     Assert.Equal(data, actual.ToArray());
 #endif
                 }
-            }
+            } }
         }
 
         [Fact]

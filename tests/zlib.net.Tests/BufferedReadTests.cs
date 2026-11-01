@@ -13,17 +13,17 @@ namespace zlib.net.Tests
             private readonly int firstLength;
             private bool first = true;
             public WithheldTrailer(byte[] data) : base(data) { firstLength = data.Length - 4; }
-            public override int Read(byte[] b, int o, int n)
+            public override int Read(byte[] buffer, int offset, int count)
             {
-                if (!first) throw new IOException("Trailer has not arrived.");
+                if (!first) { throw new IOException("Trailer has not arrived."); }
                 first = false;
-                return base.Read(b, o, Math.Min(n, firstLength));
+                return base.Read(buffer, offset, Math.Min(count, firstLength));
             }
-            public override Task<int> ReadAsync(byte[] b, int o, int n, CancellationToken ct) => Task.FromResult(Read(b, o, n));
+            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => Task.FromResult(Read(buffer, offset, count));
 #if NET8_0_OR_GREATER
-            public override ValueTask<int> ReadAsync(Memory<byte> b, CancellationToken ct = default)
+            public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
             {
-                var tmp = new byte[b.Length]; int n = Read(tmp, 0, tmp.Length); tmp.AsMemory(0, n).CopyTo(b); return new ValueTask<int>(n);
+                var tmp = new byte[buffer.Length]; int n = Read(tmp, 0, tmp.Length); tmp.AsMemory(0, n).CopyTo(buffer); return new ValueTask<int>(n);
             }
 #endif
         }
@@ -50,7 +50,7 @@ namespace zlib.net.Tests
         {
             using var z = new ZInputStream(new WithheldTrailer(CompletionTests.Pack(new byte[50000])));
             var one = new byte[1];
-            for (int i = 0; i < 50000; i++) Assert.Equal(1, await z.ReadAsync(one, 0, 1));
+            for (int i = 0; i < 50000; i++) { Assert.Equal(1, await z.ReadAsync(one, 0, 1)); }
             await Assert.ThrowsAsync<IOException>(() => z.ReadAsync(one, 0, 1));
         }
     }

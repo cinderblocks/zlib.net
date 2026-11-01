@@ -614,8 +614,8 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		private void SetCodes(int bl, int bd, int[] tl, int tlIndex, int[] td, int tdIndex, ZStream z)
 		{
-			if (codes == null) codes = new InfCodes(bl, bd, tl, tlIndex, td, tdIndex, z);
-			else codes.Init(bl, bd, tl, tlIndex, td, tdIndex);
+			if (codes == null) { codes = new InfCodes(bl, bd, tl, tlIndex, td, tdIndex, z); }
+			else { codes.Init(bl, bd, tl, tlIndex, td, tdIndex); }
 		}
 
 		internal void  free(ZStream z)

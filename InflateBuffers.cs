@@ -17,14 +17,14 @@ namespace ComponentAce.Compression.Libs.zlib
 
         internal static void ReturnWindow(byte[]? value)
         {
-            if (value == null || value.Length != WindowSize) return;
+            if (value == null || value.Length != WindowSize) { return; }
             Array.Clear(value, 0, value.Length);
             Interlocked.CompareExchange(ref window, value, null);
         }
 
         internal static void ReturnTable(int[]? value)
         {
-            if (value == null || value.Length != TableSize) return;
+            if (value == null || value.Length != TableSize) { return; }
             Array.Clear(value, 0, value.Length);
             Interlocked.CompareExchange(ref table, value, null);
         }

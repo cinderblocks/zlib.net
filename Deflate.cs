@@ -1564,7 +1564,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			window = null;
 			var buffers = pooledBuffers;
 			pooledBuffers = null;
-			if (buffers != null) DeflateBuffers.Return(buffers);
+			if (buffers != null) { DeflateBuffers.Return(buffers); }
 			// free
 			// dstate=null;
 			return status == BUSY_STATE?Z_DATA_ERROR:Z_OK;

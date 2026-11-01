@@ -16,7 +16,7 @@ namespace ComponentAce.Compression.Libs.zlib
             for (int i = 0; i < slots.Length; i++)
             {
                 var buffers = Interlocked.Exchange(ref slots[i], null);
-                if (buffers != null) return buffers;
+                if (buffers != null) { return buffers; }
             }
             return new DeflateBuffers();
         }
@@ -29,7 +29,7 @@ namespace ComponentAce.Compression.Libs.zlib
             Array.Clear(buffers.Previous, 0, buffers.Previous.Length);
             Array.Clear(buffers.Heads, 0, buffers.Heads.Length);
             for (int i = 0; i < slots.Length; i++)
-                if (Interlocked.CompareExchange(ref slots[i], buffers, null) == null) return;
+                { if (Interlocked.CompareExchange(ref slots[i], buffers, null) == null) { return; } }
             // The cache is full; the bundle is left for collection rather than growing the cache.
         }
     }

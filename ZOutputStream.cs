@@ -139,19 +139,19 @@ namespace ComponentAce.Compression.Libs.zlib
 
         /// <summary>Creates a compression stream with a positive output buffer size and memory level (1-9).</summary>
         /// <remarks>The default memory level is 8. Lower levels use smaller hash and symbol buffers, which may
-        /// affect speed and compression ratio. At level 6 the main codec buffers use 160 KiB rather than 256 KiB.
+        /// affect speed and compression ratio. At memory level 6 the main codec buffers use 160 KiB rather than 256 KiB.
         /// The 32 KiB history size is unchanged. Custom memory levels bypass the default buffer cache.</remarks>
         public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen, int bufferSize, int memoryLevel)
         {
             if (bufferSize <= 0) throw new ArgumentOutOfRangeException(nameof(bufferSize));
-            if (memoryLevel < 1 || memoryLevel > 9) throw new ArgumentOutOfRangeException(nameof(memoryLevel));
+            if (memoryLevel < 1 || memoryLevel > 9) { throw new ArgumentOutOfRangeException(nameof(memoryLevel)); }
             bufsize = bufferSize;
             InitBlock();
             this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
             this.leaveOpen = leaveOpen;
             if (level < -1 || level > 9) throw new ArgumentOutOfRangeException(nameof(level));
             if (z.deflateInit(level, 15, memoryLevel) != zlibConst.Z_OK)
-                throw new ZStreamException("Unable to initialize compression.");
+                { throw new ZStreamException("Unable to initialize compression."); }
             compress = true;
         }
 
@@ -479,9 +479,9 @@ namespace ComponentAce.Compression.Libs.zlib
         {
             ThrowIfDisposed();
             ThrowIfFailed();
-            if (!finished) throw new InvalidOperationException("Finish the current stream before resetting it.");
+            if (!finished) { throw new InvalidOperationException("Finish the current stream before resetting it."); }
             int status = compress ? z.deflateReset() : z.inflateReset();
-            if (status != zlibConst.Z_OK) throw new ZStreamException("Unable to reset the codec.");
+            if (status != zlibConst.Z_OK) { throw new ZStreamException("Unable to reset the codec."); }
             z.next_in = Array.Empty<byte>();
             z.next_out = null;
             z.next_in_index = z.avail_in = z.next_out_index = z.avail_out = 0;
@@ -545,7 +545,7 @@ namespace ComponentAce.Compression.Libs.zlib
                     do
                     {
                         int produced = Step(zlibConst.Z_SYNC_FLUSH, false, output, output.Length);
-                        if (produced > 0) out_Renamed!.Write(output, 0, produced);
+                        if (produced > 0) { out_Renamed!.Write(output, 0, produced); }
                     }
                     while (z.avail_out == 0);
                 }
@@ -556,7 +556,12 @@ namespace ComponentAce.Compression.Libs.zlib
 
         // A sync-flush marker needs room to finish without repeatedly emitting empty markers.
         // The normal output buffer may be as small as one byte through the public constructor.
-        private byte[] GetFlushBuffer() => bufsize >= 8 ? buf : (flushBuffer ??= new byte[8]);
+        private byte[] GetFlushBuffer()
+        {
+            if (bufsize >= 8) { return buf; }
+            if (flushBuffer == null) { flushBuffer = new byte[8]; }
+            return flushBuffer;
+        }
 
         /// <inheritdoc />
         public override bool CanRead => false;

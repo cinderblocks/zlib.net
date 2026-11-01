@@ -278,7 +278,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 			// No input is needed while the window can still deliver decoded bytes.
 			if (err == zlibConst.Z_BUF_ERROR && !nomoreinput && z.avail_in == 0)
-				return z.avail_out == count;
+				{ return z.avail_out == count; }
 			if (err == zlibConst.Z_BUF_ERROR && !compress && nomoreinput && z.avail_in == 0)
 			{
 				if (z.avail_out == count)

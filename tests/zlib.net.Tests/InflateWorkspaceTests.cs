@@ -11,7 +11,7 @@ namespace zlib.net.Tests
             var bytes = new System.Collections.Generic.List<byte> { 0x78, 0x9c }; int accumulator = 0, bits = 0;
             void Put(int value, int length) { accumulator |= value << bits; bits += length; while (bits >= 8) { bytes.Add((byte)accumulator); accumulator >>= 8; bits -= 8; } }
             for (int i = 0; i < count; i++) { Put(i == count - 1 ? 3 : 2, 3); Put(0, 7); }
-            if (bits != 0) bytes.Add((byte)accumulator); bytes.AddRange(new byte[] { 0, 0, 0, 1 }); return bytes.ToArray();
+            if (bits != 0) { bytes.Add((byte)accumulator); } bytes.AddRange(new byte[] { 0, 0, 0, 1 }); return bytes.ToArray();
         }
 
 #if NET8_0_OR_GREATER

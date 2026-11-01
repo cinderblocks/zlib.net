@@ -37,7 +37,7 @@ namespace zlib.net.Tests
         {
             var sink = new MemoryStream(); using var z = new ZOutputStream(sink, level, true);
             var samples = new[] { TestData.Text(100000), Array.Empty<byte>(), TestData.Random(2000), new byte[] { 42 }, TestData.Periodic(50000, 7) };
-            for (int pass = 0; pass < 3; pass++) foreach (byte[] data in samples)
+            for (int pass = 0; pass < 3; pass++) { foreach (byte[] data in samples)
             {
                 sink.SetLength(0); sink.Position = 0;
                 z.Write(data, 0, data.Length); z.Finish();
@@ -45,7 +45,7 @@ namespace zlib.net.Tests
                 Assert.Equal(fresh.ToArray(), sink.ToArray());
                 Assert.Equal(data.Length, z.TotalIn);
                 z.Reset(); Assert.Equal(0, z.TotalIn); Assert.Equal(0, z.TotalOut); Assert.True(z.CanWrite);
-            }
+            } }
             z.Finish();
         }
 
@@ -56,7 +56,7 @@ namespace zlib.net.Tests
             var sink = new MemoryStream(); using var z = new ZOutputStream(sink, true);
             for (int i = 0; i < 20; i++)
             {
-                if (i != 0) z.Reset(); sink.SetLength(0); sink.Position = 0;
+                if (i != 0) { z.Reset(); } sink.SetLength(0); sink.Position = 0;
                 byte[] message = messages[i % messages.Length], packed = CompletionTests.Pack(message);
                 z.Write(packed, 0, packed.Length); z.Finish(); Assert.Equal(message, sink.ToArray());
             }

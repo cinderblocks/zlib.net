@@ -18,7 +18,7 @@ namespace zlib.net.Tests
         }
         private sealed class ThrowingSink : MemoryStream
         {
-            public override void Write(byte[] data, int offset, int count) => throw new IOException();
+            public override void Write(byte[] buffer, int offset, int count) => throw new IOException();
         }
         [Fact]
         public async Task EmptyAndCompletedArrayReadsHonorCancellation()

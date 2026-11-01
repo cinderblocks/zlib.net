@@ -13,15 +13,15 @@ Console.WriteLine($"{RuntimeInformation.FrameworkDescription}; {RuntimeInformati
 var zeros = new byte[1 << 20];
 var text = new byte[1 << 20];
 var rng = new Random(123);
-for (int i = 0; i < text.Length; i++) text[i] = (byte)rng.Next(32, 64);
+for (int i = 0; i < text.Length; i++) { text[i] = (byte)rng.Next(32, 64); }
 var small = text.AsSpan(0, 2048).ToArray();
 byte[] Pack(byte[] data, bool chunks = false, CompressionLevel level = CompressionLevel.Optimal)
 {
     using var target = new MemoryStream();
     using (var z = new ZLibStream(target, level, true))
     {
-        if (!chunks) z.Write(data);
-        else for (int i = 0; i < data.Length; i += 8192) { z.Write(data.AsSpan(i, Math.Min(8192, data.Length - i))); z.Flush(); }
+        if (!chunks) { z.Write(data); }
+        else { for (int i = 0; i < data.Length; i += 8192) { z.Write(data.AsSpan(i, Math.Min(8192, data.Length - i))); z.Flush(); } }
     }
     return target.ToArray();
 }
@@ -36,7 +36,7 @@ foreach (var fixture in new[] { (fixedSmall, System.Text.Encoding.ASCII.GetBytes
 {
     using var z = new ZInputStream(new MemoryStream(fixture.Item1));
     using var actual = new MemoryStream(); z.CopyTo(actual);
-    if (!actual.ToArray().AsSpan().SequenceEqual(fixture.Item2)) throw new InvalidOperationException("Invalid benchmark output.");
+    if (!actual.ToArray().AsSpan().SequenceEqual(fixture.Item2)) { throw new InvalidOperationException("Invalid benchmark output."); }
 }
 var buffer = new byte[4096];
 long Drain(byte[] packed, int size = 4096, bool asyncMemory = false, bool asyncArray = false)
@@ -44,13 +44,13 @@ long Drain(byte[] packed, int size = 4096, bool asyncMemory = false, bool asyncA
     using var z = new ZInputStream(new MemoryStream(packed));
     long total = 0; int n;
     while ((n = asyncMemory ? z.ReadAsync(buffer.AsMemory(0, size)).GetAwaiter().GetResult() :
-                asyncArray ? z.ReadAsync(buffer, 0, size).GetAwaiter().GetResult() : z.Read(buffer, 0, size)) > 0) total += n;
+                asyncArray ? z.ReadAsync(buffer, 0, size).GetAwaiter().GetResult() : z.Read(buffer, 0, size)) > 0) { total += n; }
     return total;
 }
 long Compress(byte[] data, bool span = false)
 {
     var sink = new Sink();
-    using (var z = new ZOutputStream(sink, 6, true)) { if (span) z.Write(data.AsSpan()); else z.Write(data, 0, data.Length); }
+    using (var z = new ZOutputStream(sink, 6, true)) { if (span) { z.Write(data.AsSpan()); } else { z.Write(data, 0, data.Length); } }
     return sink.Count;
 }
 Measure("compress/empty", () => Compress(Array.Empty<byte>()));
@@ -96,7 +96,7 @@ using (var source = new WithheldTrailer(sample))
 using (var z = new ZInputStream(source))
 {
     int total = 0; var one = new byte[1];
-    try { while (z.Read(one, 0, 1) > 0) total++; } catch (IOException) { }
+    try { while (z.Read(one, 0, 1) > 0) { total++; } } catch (IOException) { /* The source deliberately withholds the trailer to measure read-ahead. */ }
     Console.WriteLine($"latency/decoded-before-trailer-read={total}");
 }
 using (var target = new MemoryStream())
@@ -112,7 +112,7 @@ Console.WriteLine($"state/CanWrite-after-Finish={capabilities.CanWrite}"); capab
 Console.WriteLine($"state/CanWrite-after-End={capabilities.CanWrite}"); capabilities.Dispose();
 try { using var z = new ZInputStream(new MemoryStream(fixedSmall)); z.ReadAsync(Memory<byte>.Empty, new CancellationToken(true)).GetAwaiter().GetResult(); Console.WriteLine("cancellation/empty-read=ignored"); }
 catch (OperationCanceledException) { Console.WriteLine("cancellation/empty-read=observed"); }
-if (args.Length > 0) File.WriteAllText(args[0], JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+if (args.Length > 0) { File.WriteAllText(args[0], JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true })); }
 
 void Measure(string name, Func<long> operation)
 {
@@ -138,13 +138,13 @@ static byte[] EmptyBlocks(int count)
     var data = new List<byte> { 0x78, 0x9c }; int accumulator = 0, bits = 0;
     void Put(int value, int length) { accumulator |= value << bits; bits += length; while (bits >= 8) { data.Add((byte)accumulator); accumulator >>= 8; bits -= 8; } }
     for (int i = 0; i < count; i++) { Put(i == count - 1 ? 3 : 2, 3); Put(0, 7); }
-    if (bits != 0) data.Add((byte)accumulator); data.AddRange(new byte[] { 0, 0, 0, 1 }); return data.ToArray();
+    if (bits != 0) { data.Add((byte)accumulator); } data.AddRange(new byte[] { 0, 0, 0, 1 }); return data.ToArray();
 }
 record Result(string Name, double Milliseconds, long AllocatedBytes, long Value);
 class Sink : Stream
 {
     public long Count; public override void Write(byte[] data, int offset, int count) => Count += count;
-    public override void Flush() { } public override bool CanRead => false; public override bool CanSeek => false; public override bool CanWrite => true;
+    public override void Flush() { /* Counting sink has no buffered output. */ } public override bool CanRead => false; public override bool CanSeek => false; public override bool CanWrite => true;
     public override long Length => Count; public override long Position { get => Count; set => throw new NotSupportedException(); }
     public override int Read(byte[] b, int o, int n) => throw new NotSupportedException(); public override long Seek(long o, SeekOrigin s) => throw new NotSupportedException(); public override void SetLength(long n) => throw new NotSupportedException();
 }
@@ -152,5 +152,5 @@ class WithheldTrailer : MemoryStream
 {
     readonly int firstLength; bool first = true;
     public WithheldTrailer(byte[] data) : base(data) { firstLength = data.Length - 4; }
-    public override int Read(byte[] b, int o, int n) { if (!first) throw new IOException("trailer withheld"); first = false; return base.Read(b, o, Math.Min(n, firstLength)); }
+    public override int Read(byte[] b, int o, int n) { if (!first) { throw new IOException("trailer withheld"); } first = false; return base.Read(b, o, Math.Min(n, firstLength)); }
 }

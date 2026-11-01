@@ -8,7 +8,9 @@ namespace zlib.net.Tests
 {
     public class RetentionTests
     {
+#pragma warning disable S1215 // Forced collection is the observable event in this weak-reference regression test.
         private static void Collect() { GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect(); }
+#pragma warning restore S1215
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static WeakReference WriteLarge(ZOutputStream z) { var b = new byte[8 << 20]; z.Write(b, 0, b.Length); return new WeakReference(b); }
         [MethodImpl(MethodImplOptions.NoInlining)]

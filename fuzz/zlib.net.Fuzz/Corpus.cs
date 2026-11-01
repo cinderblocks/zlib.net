@@ -69,7 +69,7 @@ namespace zlib.net.Fuzz
                 while (bits >= 8) { bytes.Add((byte)accumulator); accumulator >>= 8; bits -= 8; }
             }
             for (int i = 0; i < count; i++) { Put(i == count - 1 ? 3 : 2, 3); Put(0, 7); }
-            if (bits != 0) bytes.Add((byte)accumulator);
+            if (bits != 0) { bytes.Add((byte)accumulator); }
             bytes.AddRange(new byte[] { 0, 0, 0, 1 }); return bytes.ToArray();
         }
 
