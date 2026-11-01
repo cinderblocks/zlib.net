@@ -279,3 +279,29 @@ public class RawInflateBenchmarks
     [Benchmark] public long RawNoChecksum() => Run(raw, -15);
     [Benchmark] public long ZlibWithAdler() => Run(zlibWrapped, 15);
 }
+
+[MemoryDiagnoser]
+public class OutputBufferBenchmarks
+{
+    private byte[] compressed;
+    [Params(4096, 16384, 32768)] public int BufferSize;
+    [Params("Text", "Zeros")] public string Kind;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        var data = Kind == "Text" ? TestData.Text(4 << 20) : new byte[4 << 20];
+        using var target = new MemoryStream();
+        using (var z = new ZLibStream(target, CompressionLevel.Optimal, true)) z.Write(data, 0, data.Length);
+        compressed = target.ToArray();
+    }
+
+    [Benchmark]
+    public long Inflate()
+    {
+        var sink = new CountingStream();
+        using (var z = new ZOutputStream(sink, true, BufferSize)) z.Write(compressed, 0, compressed.Length);
+        if (sink.Count != (4 << 20)) throw new InvalidOperationException("Incomplete output.");
+        return sink.Count;
+    }
+}

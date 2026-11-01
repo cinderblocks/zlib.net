@@ -79,7 +79,7 @@ namespace ComponentAce.Compression.Libs.zlib
         /// <summary>The underlying zlib stream.</summary>
         protected internal ZStream z = new ZStream();
         /// <summary>The size of the output buffer.</summary>
-        protected internal int bufsize = 4096;
+        protected internal int bufsize = 16 * 1024;
         /// <summary>Backing field of <see cref="FlushMode"/>.</summary>
         protected internal int flush_Renamed_Field;
         /// <summary>Output buffers.</summary>
@@ -100,8 +100,15 @@ namespace ComponentAce.Compression.Libs.zlib
         /// <summary> Creates a stream that inflates everything written to it into <paramref name="out_Renamed"/>.</summary>
         /// <param name="out_Renamed">The stream that receives the inflated data.</param>
         /// <param name="leaveOpen">true to leave <paramref name="out_Renamed"/> open when this stream is disposed.</param>
-        public ZOutputStream(System.IO.Stream out_Renamed, bool leaveOpen)
+        public ZOutputStream(System.IO.Stream out_Renamed, bool leaveOpen) : this(out_Renamed, leaveOpen, 16 * 1024)
         {
+        }
+
+        /// <summary>Creates a decompression stream with a positive output buffer size, in bytes.</summary>
+        public ZOutputStream(System.IO.Stream out_Renamed, bool leaveOpen, int bufferSize)
+        {
+            if (bufferSize <= 0) throw new ArgumentOutOfRangeException(nameof(bufferSize));
+            bufsize = bufferSize;
             InitBlock();
             this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
             this.leaveOpen = leaveOpen;
@@ -119,8 +126,15 @@ namespace ComponentAce.Compression.Libs.zlib
         /// <param name="out_Renamed">The stream that receives the deflated data.</param>
         /// <param name="level">The compression level, 0 (none) to 9 (best), or <see cref="zlibConst.Z_DEFAULT_COMPRESSION"/>.</param>
         /// <param name="leaveOpen">true to leave <paramref name="out_Renamed"/> open when this stream is disposed.</param>
-        public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen)
+        public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen) : this(out_Renamed, level, leaveOpen, 16 * 1024)
         {
+        }
+
+        /// <summary>Creates a compression stream with a positive output buffer size, in bytes.</summary>
+        public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen, int bufferSize)
+        {
+            if (bufferSize <= 0) throw new ArgumentOutOfRangeException(nameof(bufferSize));
+            bufsize = bufferSize;
             InitBlock();
             this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
             this.leaveOpen = leaveOpen;
