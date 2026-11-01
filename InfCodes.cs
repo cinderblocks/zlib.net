@@ -177,6 +177,11 @@ namespace ComponentAce.Compression.Libs.zlib
 								r = Z_OK;
 							else
 							{
+								// A terminal entry can require fewer bits than the table lookup width.
+								// With no more input, decode only if the entry is fully buffered.
+								// Same correction as SharpCompress PR #118 (LEN and DIST).
+								int partial = (tree_index + (b & inflate_mask[k])) * 3;
+								if (k >= tree[partial + 1]) break;
 								
 								s.bitb = b; s.bitk = k;
 								z.avail_in = n; z.total_in += p - z.next_in_index; z.next_in_index = p;
@@ -272,6 +277,11 @@ namespace ComponentAce.Compression.Libs.zlib
 								r = Z_OK;
 							else
 							{
+								// A terminal entry can require fewer bits than the table lookup width.
+								// With no more input, decode only if the entry is fully buffered.
+								// Same correction as SharpCompress PR #118 (LEN and DIST).
+								int partial = (tree_index + (b & inflate_mask[k])) * 3;
+								if (k >= tree[partial + 1]) break;
 								
 								s.bitb = b; s.bitk = k;
 								z.avail_in = n; z.total_in += p - z.next_in_index; z.next_in_index = p;
