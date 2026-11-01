@@ -123,6 +123,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			return istate == null ? Z_STREAM_ERROR : Inflate.inflate(this, f);
 		}
+		/// <summary>Starts an independent stream with the same decompression options, reusing allocated workspace.</summary>
+		/// <remarks>Discards unfinished data and resets counters and dictionary history. Set input/output fields for the new stream.</remarks>
+		public int inflateReset() => istate?.blocks == null ? Z_STREAM_ERROR : Inflate.inflateReset(this);
+
 		/// <summary>Releases the decompression state.</summary>
 		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int inflateEnd()
@@ -165,6 +169,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			return dstate?.deflate(this, flush) ?? Z_STREAM_ERROR;
 		}
+		/// <summary>Starts an independent stream with the same compression options, reusing allocated buffers.</summary>
+		/// <remarks>Discards unfinished data and resets counters and dictionaries. Set input/output fields for the new stream.</remarks>
+		public int deflateReset() => dstate?.pending_buf == null ? Z_STREAM_ERROR : dstate.deflateReset(this);
+
 		/// <summary>Releases the compression state.</summary>
 		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateEnd()

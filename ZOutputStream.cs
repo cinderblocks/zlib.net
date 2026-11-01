@@ -434,6 +434,22 @@ namespace ComponentAce.Compression.Libs.zlib
         [Obsolete("Use Finish().")]
         public virtual void finish() => Finish();
 
+        /// <summary>Starts another independent zlib stream on the same sink, reusing codec buffers.</summary>
+        /// <remarks>Call Finish first. The sink remains open, flush mode is preserved, and counters and dictionary history reset.
+        /// The caller must frame or separate the resulting streams; decompression does not accept concatenated members automatically.</remarks>
+        public void Reset()
+        {
+            ThrowIfDisposed();
+            ThrowIfFailed();
+            if (!finished) throw new InvalidOperationException("Finish the current stream before resetting it.");
+            int status = compress ? z.deflateReset() : z.inflateReset();
+            if (status != zlibConst.Z_OK) throw new ZStreamException("Unable to reset the codec.");
+            z.next_in = Array.Empty<byte>();
+            z.next_out = null;
+            z.next_in_index = z.avail_in = z.next_out_index = z.avail_out = 0;
+            finished = false;
+        }
+
         /// <summary> Releases the native-style zlib state. Called automatically on dispose.</summary>
         public virtual void End()
         {
