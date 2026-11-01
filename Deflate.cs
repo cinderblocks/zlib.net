@@ -312,11 +312,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			window_size = 2 * w_size;
 			
-			head[hash_size - 1] = 0;
-			for (int i = 0; i < hash_size - 1; i++)
-			{
-				head[i] = 0;
-			}
+			Array.Clear(head, 0, hash_size);
 			
 			// Set the default configuration parameters:
 			max_lazy_match = config_table[level].max_lazy;
@@ -1774,10 +1770,8 @@ namespace ComponentAce.Compression.Libs.zlib
 						// as a special marker by inflate_sync().
 						if (flush == Z_FULL_FLUSH)
 						{
-							//state.head[s.hash_size-1]=0;
-							for (int i = 0; i < hash_size; i++)
-							// forget history
-								head[i] = 0;
+						// Forget history using the runtime's bulk clear.
+						Array.Clear(head, 0, hash_size);
 						}
 					}
 					strm.flush_pending();
