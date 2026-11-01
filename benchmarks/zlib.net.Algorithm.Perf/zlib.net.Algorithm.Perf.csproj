@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../StrongName.props" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>zlib.net.Benchmarks</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LibraryPath Condition="'$(LibraryPath)' == ''">../../bin/Release/net8.0/zlib.net.dll</LibraryPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="zlib.net"><HintPath>$(LibraryPath)</HintPath></Reference>
+    <Compile Include="../../tests/zlib.net.Tests/TestData.cs" Link="TestData.cs" />
+  </ItemGroup>
+</Project>
