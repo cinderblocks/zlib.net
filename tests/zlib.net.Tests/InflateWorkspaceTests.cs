@@ -18,16 +18,25 @@ namespace zlib.net.Tests
         [Fact]
         public void FixedBlockAllocationsDoNotGrowWithBlockCount()
         {
+            var z = new ZStream(); z.inflateInit();
+            var output = new byte[1];
             long Measure(byte[] data)
             {
+                z.inflateReset(); z.next_in = data; z.next_in_index = 0; z.avail_in = data.Length;
+                z.next_out = output; z.next_out_index = 0; z.avail_out = output.Length;
                 long before = GC.GetAllocatedBytesForCurrentThread();
-                using (var z = new ZInputStream(new MemoryStream(data))) z.CopyTo(Stream.Null);
+                int status = z.inflate(0);
+                if (status != 1) throw new InvalidOperationException(z.msg);
                 return GC.GetAllocatedBytesForCurrentThread() - before;
             }
-            byte[] one = EmptyBlocks(1), many = EmptyBlocks(10000);
-            Measure(one); Measure(many); // warm pools and metadata outside the measurement
-            long initial = Measure(one), repeated = Measure(many);
-            Assert.True(repeated <= initial + 1024, $"Per-block allocations: {initial} -> {repeated}");
+            try
+            {
+                byte[] one = EmptyBlocks(1), many = EmptyBlocks(10000);
+                Measure(one); Measure(many); // warm metadata outside the measurement
+                long initial = Measure(one), repeated = Measure(many);
+                Assert.True(repeated <= initial + 1024, $"Per-block allocations: {initial} -> {repeated}");
+            }
+            finally { z.inflateEnd(); }
         }
 #endif
 

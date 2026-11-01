@@ -47,7 +47,6 @@ namespace ComponentAce.Compression.Libs.zlib
 {
 	internal sealed class InfBlocks
 	{
-		private const int MANY = 1440;
 		
 		// And'ing with mask[n] masks the lower n bits		
 		private static readonly int[] inflate_mask = {0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff};
@@ -105,7 +104,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		internal InfBlocks(ZStream z, Object checkfn, int w)
 		{
-			window = new byte[w];
+			window = InflateBuffers.RentWindow(w);
 			end = w;
 			this.checkfn = checkfn;
 			mode = TYPE;
@@ -348,7 +347,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							return inflate_flush(z, r);
 						}
 						t = 258 + (t & 0x1f) + ((t >> 5) & 0x1f);
-						hufts ??= new int[MANY * 3];
+						hufts ??= InflateBuffers.RentTable();
 						workspace ??= new InfTree.Workspace();
 						blens ??= new int[320];
 						Array.Clear(blens, 0, blens.Length);
@@ -622,11 +621,15 @@ namespace ComponentAce.Compression.Libs.zlib
 		internal void  free(ZStream z)
 		{
 			reset(z, null);
+			byte[] releasedWindow = window;
+			int[] releasedTables = hufts;
 			window = null;
 			hufts = null;
 			blens = null;
 			workspace = null;
 			codes = null;
+			InflateBuffers.ReturnWindow(releasedWindow);
+			InflateBuffers.ReturnTable(releasedTables);
 			//ZFREE(z, s);
 		}
 		
