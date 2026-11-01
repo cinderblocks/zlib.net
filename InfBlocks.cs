@@ -104,7 +104,6 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		internal InfBlocks(ZStream z, Object checkfn, int w)
 		{
-			hufts = new int[MANY * 3];
 			window = new byte[w];
 			end = w;
 			this.checkfn = checkfn;
@@ -360,6 +359,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							return inflate_flush(z, r);
 						}
 						t = 258 + (t & 0x1f) + ((t >> 5) & 0x1f);
+						hufts ??= new int[MANY * 3];
 						blens = new int[t];
 						
 						{
