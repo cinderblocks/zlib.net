@@ -13,10 +13,16 @@ namespace zlib.net.Tests
         {
             byte[] data = TestData.Text(2000);
             using var z = new ZOutputStream(Stream.Null, 6, true);
-            for (int i = 0; i < 5; i++) { z.Write(data, 0, data.Length); z.Finish(); z.Reset(); }
-            long before = GC.GetAllocatedBytesForCurrentThread();
             for (int i = 0; i < 100; i++) { z.Write(data, 0, data.Length); z.Finish(); z.Reset(); }
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            // Runtime/tiering initialization can occur after the first few calls (observed on Linux).
+            // A recurring scratch allocation must appear in every batch; a one-time runtime cost need not.
+            long allocated = long.MaxValue;
+            for (int batch = 0; batch < 3; batch++)
+            {
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                for (int i = 0; i < 100; i++) { z.Write(data, 0, data.Length); z.Finish(); z.Reset(); }
+                allocated = Math.Min(allocated, GC.GetAllocatedBytesForCurrentThread() - before);
+            }
             Assert.True(allocated < 1024, $"Unexpected per-message scratch allocation: {allocated}");
             z.Finish();
         }
