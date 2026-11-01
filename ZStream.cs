@@ -160,8 +160,16 @@ namespace ComponentAce.Compression.Libs.zlib
 		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateInit(int level, int bits)
 		{
+			return deflateInit(level, bits, 8);
+		}
+		/// <summary>Initializes compression with a window size and memory level (1-9, default 8).</summary>
+		/// <remarks>Smaller memory levels reduce hash and symbol buffers but can change speed and compression ratio.
+		/// Negative window bits select raw DEFLATE. The history window size is independent of the memory level.</remarks>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
+		public int deflateInit(int level, int bits, int memoryLevel)
+		{
 			dstate = new Deflate();
-			return dstate.deflateInit(this, level, bits);
+			return dstate.deflateInit2(this, level, 8, bits, memoryLevel, 0);
 		}
 		/// <summary>Compresses as much data as possible from <see cref="next_in"/> into <see cref="next_out"/>.</summary>
 		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>

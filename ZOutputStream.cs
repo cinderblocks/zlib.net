@@ -133,14 +133,24 @@ namespace ComponentAce.Compression.Libs.zlib
 
         /// <summary>Creates a compression stream with a positive output buffer size, in bytes.</summary>
         public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen, int bufferSize)
+            : this(out_Renamed, level, leaveOpen, bufferSize, 8)
+        {
+        }
+
+        /// <summary>Creates a compression stream with a positive output buffer size and memory level (1-9).</summary>
+        /// <remarks>The default memory level is 8. Lower levels use smaller hash and symbol buffers, which may
+        /// affect speed and compression ratio. At level 6 the main codec buffers use 160 KiB rather than 256 KiB.
+        /// The 32 KiB history size is unchanged. Custom memory levels bypass the default buffer cache.</remarks>
+        public ZOutputStream(System.IO.Stream out_Renamed, int level, bool leaveOpen, int bufferSize, int memoryLevel)
         {
             if (bufferSize <= 0) throw new ArgumentOutOfRangeException(nameof(bufferSize));
+            if (memoryLevel < 1 || memoryLevel > 9) throw new ArgumentOutOfRangeException(nameof(memoryLevel));
             bufsize = bufferSize;
             InitBlock();
             this.out_Renamed = out_Renamed ?? throw new ArgumentNullException(nameof(out_Renamed));
             this.leaveOpen = leaveOpen;
             if (level < -1 || level > 9) throw new ArgumentOutOfRangeException(nameof(level));
-            if (z.deflateInit(level) != zlibConst.Z_OK)
+            if (z.deflateInit(level, 15, memoryLevel) != zlibConst.Z_OK)
                 throw new ZStreamException("Unable to initialize compression.");
             compress = true;
         }
