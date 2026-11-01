@@ -166,7 +166,11 @@ namespace ComponentAce.Compression.Libs.zlib
         private void ThrowIfCompleted()
         {
             ThrowIfFailed();
-            if (finished) throw new InvalidOperationException("The compressed stream has already ended.");
+            if (finished)
+            {
+                if (!compress) throw new ZStreamException("Trailing data after the compressed stream.");
+                throw new InvalidOperationException("The compressed stream has already ended.");
+            }
         }
 
         // One codec step, shared by sync and async callers. Every iteration must consume input,

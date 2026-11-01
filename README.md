@@ -75,7 +75,7 @@ Switch the package reference to `ZlibCore`. The namespace and assembly name are 
 
 ## Stream validation and buffering
 
-- Decompression-mode `ZOutputStream` accepts one zlib stream. Trailing bytes and additional members are rejected. Non-empty writes after stream completion throw `InvalidOperationException`; repeated `Finish()` / `FinishAsync()` calls are safe.
+- Decompression-mode `ZOutputStream` accepts one zlib stream. Trailing bytes and additional members throw `ZStreamException`, including across write boundaries. Non-empty compression writes after stream completion throw `InvalidOperationException`; repeated `Finish()` / `FinishAsync()` calls are safe.
 - `Finish()`, `FinishAsync()`, `Dispose()`, and `DisposeAsync()` propagate output failures. Disposal still releases codec resources and closes the underlying stream unless `leaveOpen` is true. After a failed codec/output operation, disposal cleans up without retrying the failed operation.
 - Compression constructors validate levels (-1 through 9); writes validate buffer ranges before changing codec state.
 - The default output buffer is now 16 KB. For example, use `new ZOutputStream(target, level: 6, leaveOpen: true, bufferSize: 32768)` to select 32 KB, or `new ZOutputStream(target, leaveOpen: true, bufferSize: 32768)` to decompress with that size.

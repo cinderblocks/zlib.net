@@ -52,7 +52,8 @@ namespace zlib.net.Tests
             z.Finish();
             z.Finish();
             long length = target.Length;
-            Assert.Throws<InvalidOperationException>(() => z.Write(new byte[] { 2 }, 0, 1));
+            if (compress) Assert.Throws<InvalidOperationException>(() => z.Write(new byte[] { 2 }, 0, 1));
+            else Assert.Throws<ZStreamException>(() => z.Write(new byte[] { 2 }, 0, 1));
             Assert.Equal(length, target.Length);
         }
 
@@ -88,6 +89,18 @@ namespace zlib.net.Tests
             z = new ZOutputStream(new GuardSink(), true);
             try { await Assert.ThrowsAsync<ZStreamException>(async () => await z.WriteAsync(packed.AsMemory())); }
             finally { z.End(); await z.DisposeAsync(); }
+        }
+
+        [Fact]
+        public void SpanTrailingDataAcrossPooledChunkBoundaryIsADataError()
+        {
+            var target = new MemoryStream();
+            using (var compressor = new ZOutputStream(target, 0, true))
+                compressor.Write(new byte[16373], 0, 16373);
+            Assert.Equal(16384, target.Length);
+            var data = target.ToArray().Concat(new byte[] { 42 }).ToArray();
+            using var z = new ZOutputStream(Stream.Null, true);
+            Assert.Throws<ZStreamException>(() => z.Write(data.AsSpan()));
         }
 
         [Fact]
