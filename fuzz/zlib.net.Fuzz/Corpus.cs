@@ -51,11 +51,26 @@ namespace zlib.net.Fuzz
             for (byte config = 0; config < 4; config++)
                 File.WriteAllBytes(Path.Combine(inflate, $"trailing-data-{config}"), Prefix(config, trailing.ToArray()));
 
+            File.WriteAllBytes(Path.Combine(inflate, "many-empty-fixed-blocks"), Prefix(0x03, EmptyBlocks(10000)));
+
             // A truncated stream.
             byte[] whole = Deflate(samples["text"], 6);
             var truncated = new byte[whole.Length / 2];
             Array.Copy(whole, truncated, truncated.Length);
             File.WriteAllBytes(Path.Combine(inflate, "truncated"), Prefix(0x00, truncated));
+        }
+
+        private static byte[] EmptyBlocks(int count)
+        {
+            var bytes = new List<byte> { 0x78, 0x9c }; int accumulator = 0, bits = 0;
+            void Put(int value, int length)
+            {
+                accumulator |= value << bits; bits += length;
+                while (bits >= 8) { bytes.Add((byte)accumulator); accumulator >>= 8; bits -= 8; }
+            }
+            for (int i = 0; i < count; i++) { Put(i == count - 1 ? 3 : 2, 3); Put(0, 7); }
+            if (bits != 0) bytes.Add((byte)accumulator);
+            bytes.AddRange(new byte[] { 0, 0, 0, 1 }); return bytes.ToArray();
         }
 
         private static byte[] Prefix(byte first, byte[] rest) => Prefix(new[] { first }, rest);

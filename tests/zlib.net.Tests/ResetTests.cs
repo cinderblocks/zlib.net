@@ -44,6 +44,19 @@ namespace zlib.net.Tests
         }
 
         [Fact]
+        public void ReusedDecoderHandlesAlternatingFixedStoredAndDynamicMessages()
+        {
+            byte[][] messages = { Array.Empty<byte>(), TestData.Text(50000), TestData.Random(70000), new byte[] { 1 }, TestData.Text(1000) };
+            var sink = new MemoryStream(); using var z = new ZOutputStream(sink, true);
+            for (int i = 0; i < 20; i++)
+            {
+                if (i != 0) z.Reset(); sink.SetLength(0); sink.Position = 0;
+                byte[] message = messages[i % messages.Length], packed = CompletionTests.Pack(message);
+                z.Write(packed, 0, packed.Length); z.Finish(); Assert.Equal(message, sink.ToArray());
+            }
+        }
+
+        [Fact]
         public void ReusedDecoderClearsHistoryAndRestoresChecksumValidation()
         {
             var sink = new MemoryStream(); using var z = new ZOutputStream(sink, true);
@@ -58,6 +71,9 @@ namespace zlib.net.Tests
             var z = new ZOutputStream(Stream.Null, 6, true);
             Assert.Throws<InvalidOperationException>(() => z.Reset()); z.End();
             Assert.Throws<ObjectDisposedException>(() => z.Reset()); z.Dispose();
+            z = new ZOutputStream(Stream.Null, true);
+            Assert.Throws<ZStreamException>(() => z.Write(new byte[] { 0xff, 0xff }, 0, 2));
+            Assert.Throws<InvalidOperationException>(() => z.Reset()); z.Dispose();
             Assert.Equal(zlibConst.Z_STREAM_ERROR, new ZStream().deflateReset());
             Assert.Equal(zlibConst.Z_STREAM_ERROR, new ZStream().inflateReset());
         }

@@ -107,6 +107,13 @@ namespace zlib.net.Fuzz
                 for (int off = 0; off < data.Length; off += chunk)
                     zout.Write(data, off, (int)Math.Min((long)chunk, data.Length - off));
                 zout.Finish();
+                byte[] first = compressed.ToArray();
+                compressed.SetLength(0); compressed.Position = 0;
+                zout.Reset();
+                for (int off = 0; off < data.Length; off += chunk)
+                    zout.Write(data, off, (int)Math.Min((long)chunk, data.Length - off));
+                zout.Finish();
+                Require(first.AsSpan().SequenceEqual(compressed.ToArray()), "Reset changed compressed bytes or retained prior message state.");
             }
             var packed = compressed.ToArray();
 
