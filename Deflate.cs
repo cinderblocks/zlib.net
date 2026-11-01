@@ -1422,11 +1422,15 @@ namespace ComponentAce.Compression.Libs.zlib
 					ulong diff = BitConverter.ToUInt64(win, scan + off) ^ BitConverter.ToUInt64(win, match + off);
 					if (diff != 0)
 					{
+#if NETCOREAPP3_0_OR_GREATER
+						int n = off + (System.Numerics.BitOperations.TrailingZeroCount(diff) >> 3);
+#else
 						int n = 0;
 						if ((diff & 0xFFFFFFFFUL) == 0) { diff >>= 32; n = 4; }
 						if ((diff & 0xFFFFUL) == 0) { diff >>= 16; n += 2; }
 						if ((diff & 0xFFUL) == 0) n++;
 						n += off;
+#endif
 						return n < MAX_MATCH ? n : MAX_MATCH;
 					}
 				}
