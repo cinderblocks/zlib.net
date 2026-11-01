@@ -17,6 +17,19 @@ namespace zlib.net.Tests
         }
 
         [Fact]
+        public void RecoveryWithoutMoreInputReturnsBufferError()
+        {
+            var z = new ZStream(); z.inflateInit(-15);
+            z.next_in = new byte[] { 0, 0 }; z.avail_in = 2;
+            try
+            {
+                Assert.Equal(zlibConst.Z_DATA_ERROR, z.inflateSync());
+                Assert.Equal(zlibConst.Z_BUF_ERROR, z.inflateSync());
+            }
+            finally { z.inflateEnd(); }
+        }
+
+        [Fact]
         public void RecoverySearchIncludesAlreadyBufferedBytes()
         {
             var z = new ZStream(); z.inflateInit(-15);

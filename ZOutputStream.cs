@@ -273,7 +273,6 @@ namespace ComponentAce.Compression.Libs.zlib
             if (count == 0)
                 return;
 
-            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfCompleted();
             z.next_in = buffer;
             z.next_in_index = offset;

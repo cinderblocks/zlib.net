@@ -392,7 +392,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			if (z == null || z.istate == null)
 				return Z_STREAM_ERROR;
 			if (z.istate.mode == BAD && z.istate.marker == 5) return Z_DATA_ERROR;
-			if (z.avail_in == 0 && !syncing && blocks.bitk < 8) return Z_BUF_ERROR;
+			if (z.avail_in == 0 && blocks.bitk < 8) return Z_BUF_ERROR;
 			if (!syncing)
 			{
 				syncing = true;
