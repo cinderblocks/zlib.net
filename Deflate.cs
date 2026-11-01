@@ -158,6 +158,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		internal ZStream strm; // pointer back to this zlib stream
 		internal int status; // as the name implies
+		private DeflateBuffers pooledBuffers;
 		internal byte[] pending_buf; // output still pending
 		internal int pending_buf_size; // size of pending_buf
 		internal int pending_out; // next pending byte to output to the stream
@@ -1491,9 +1492,19 @@ namespace ComponentAce.Compression.Libs.zlib
 			hash_mask = hash_size - 1;
 			hash_shift = ((hash_bits + MIN_MATCH - 1) / MIN_MATCH);
 			
-			window = new byte[w_size * 2];
-			prev = new short[w_size];
-			head = new short[hash_size];
+			if (windowBits == 15 && memLevel == 8)
+			{
+				pooledBuffers = DeflateBuffers.Rent();
+				window = pooledBuffers.Window;
+				prev = pooledBuffers.Previous;
+				head = pooledBuffers.Heads;
+			}
+			else
+			{
+				window = new byte[w_size * 2];
+				prev = new short[w_size];
+				head = new short[hash_size];
+			}
 			
 			lit_bufsize = 1 << (memLevel + 6); // 16K elements by default
 			
@@ -1501,7 +1512,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			// Each consumed symbol frees three bytes; a fixed code uses at most 31 bits.
 			// With one byte of headroom per symbol, output cannot overtake unread symbols.
 			// Separate distance and literal regions did not satisfy this invariant.
-			pending_buf = new byte[lit_bufsize * 4];
+			pending_buf = pooledBuffers != null ? pooledBuffers.Pending : new byte[lit_bufsize * 4];
 			pending_buf_size = lit_bufsize * 4;
 			
 			symbol_buf = lit_bufsize;
@@ -1550,6 +1561,9 @@ namespace ComponentAce.Compression.Libs.zlib
 			head = null;
 			prev = null;
 			window = null;
+			var buffers = pooledBuffers;
+			pooledBuffers = null;
+			if (buffers != null) DeflateBuffers.Return(buffers);
 			// free
 			// dstate=null;
 			return status == BUSY_STATE?Z_DATA_ERROR:Z_OK;
