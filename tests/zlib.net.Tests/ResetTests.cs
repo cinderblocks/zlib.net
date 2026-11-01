@@ -7,6 +7,21 @@ namespace zlib.net.Tests
 {
     public class ResetTests
     {
+#if NET8_0_OR_GREATER
+        [Fact]
+        public void ReusedCompressionDoesNotAllocatePerMessageScratch()
+        {
+            byte[] data = TestData.Text(2000);
+            using var z = new ZOutputStream(Stream.Null, 6, true);
+            for (int i = 0; i < 5; i++) { z.Write(data, 0, data.Length); z.Finish(); z.Reset(); }
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 100; i++) { z.Write(data, 0, data.Length); z.Finish(); z.Reset(); }
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.True(allocated < 1024, $"Unexpected per-message scratch allocation: {allocated}");
+            z.Finish();
+        }
+#endif
+
         [Theory]
         [InlineData(0)]
         [InlineData(1)]

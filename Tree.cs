@@ -291,7 +291,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			gen_bitlen(s);
 			
 			// The field len is now set, we can generate the bit codes
-			gen_codes(tree, max_code, s.bl_count);
+			gen_codes(tree, max_code, s.bl_count, s.next_code);
 		}
 		
 		// Generate the codes for a given tree and bit counts (which need not be
@@ -300,9 +300,8 @@ namespace ComponentAce.Compression.Libs.zlib
 		// the given tree and the field len is set for all tree elements.
 		// OUT assertion: the field code is set for all tree elements of non
 		//     zero code length.
-		internal static void  gen_codes(short[] tree, int max_code, short[] bl_count)
+		internal static void  gen_codes(short[] tree, int max_code, short[] bl_count, short[] next_code)
 		{
-			short[] next_code = new short[MAX_BITS + 1]; // next code value for each bit length
 			short code = 0; // running code value
 			int bits; // bit index
 			int n; // code index

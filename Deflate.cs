@@ -251,6 +251,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		// number of codes at each bit length for an optimal tree
 		internal short[] bl_count = new short[MAX_BITS + 1];
+		internal short[] next_code = new short[MAX_BITS + 1];
 		
 		// heap used to build the Huffman trees
 		internal int[] heap = new int[2 * L_CODES + 1];
