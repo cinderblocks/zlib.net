@@ -91,6 +91,7 @@ namespace ComponentAce.Compression.Libs.zlib
         private readonly bool leaveOpen;
         private bool finished;
         private bool failed;
+        private byte[]? flushBuffer;
 
         /// <summary> Creates a stream that inflates everything written to it into <paramref name="out_Renamed"/>.</summary>
         public ZOutputStream(System.IO.Stream out_Renamed) : this(out_Renamed, false)
@@ -175,14 +176,16 @@ namespace ComponentAce.Compression.Libs.zlib
 
         // One codec step, shared by sync and async callers. Every iteration must consume input,
         // produce output, or end the stream; otherwise a corrupt/truncated stream could spin forever.
-        private int Step(int mode, bool finishing)
+        private int Step(int mode, bool finishing) => Step(mode, finishing, buf, bufsize);
+
+        private int Step(int mode, bool finishing, byte[] output, int size)
         {
             int before = z.avail_in;
-            z.next_out = buf;
+            z.next_out = output;
             z.next_out_index = 0;
-            z.avail_out = bufsize;
+            z.avail_out = size;
             int status = compress ? z.deflate(mode) : z.inflate(mode);
-            int produced = bufsize - z.avail_out;
+            int produced = size - z.avail_out;
             if (status == zlibConst.Z_STREAM_END)
             {
                 finished = true;
@@ -330,7 +333,25 @@ namespace ComponentAce.Compression.Libs.zlib
         public override async System.Threading.Tasks.Task FlushAsync(System.Threading.CancellationToken cancellationToken)
         {
             ThrowIfDisposed();
-            await out_Renamed!.FlushAsync(cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfFailed();
+            try
+            {
+                if (compress && !finished)
+                {
+                    byte[] output = GetFlushBuffer();
+                    do
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        int produced = Step(zlibConst.Z_SYNC_FLUSH, false, output, output.Length);
+                        if (produced > 0)
+                            await out_Renamed!.WriteAsync(output, 0, produced, cancellationToken).ConfigureAwait(false);
+                    }
+                    while (z.avail_out == 0);
+                }
+                await out_Renamed!.FlushAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch { failed = true; throw; }
         }
 
         /// <summary>Asynchronously writes any remaining data to the underlying stream and finishes the compressed or decompressed stream.</summary>
@@ -443,8 +464,27 @@ namespace ComponentAce.Compression.Libs.zlib
         public override void Flush()
         {
             ThrowIfDisposed();
-            out_Renamed!.Flush();
+            ThrowIfFailed();
+            try
+            {
+                if (compress && !finished)
+                {
+                    byte[] output = GetFlushBuffer();
+                    do
+                    {
+                        int produced = Step(zlibConst.Z_SYNC_FLUSH, false, output, output.Length);
+                        if (produced > 0) out_Renamed!.Write(output, 0, produced);
+                    }
+                    while (z.avail_out == 0);
+                }
+                out_Renamed!.Flush();
+            }
+            catch { failed = true; throw; }
         }
+
+        // A sync-flush marker needs room to finish without repeatedly emitting empty markers.
+        // The normal output buffer may be as small as one byte through the public constructor.
+        private byte[] GetFlushBuffer() => bufsize >= 8 ? buf : (flushBuffer ??= new byte[8]);
 
         /// <inheritdoc />
         public override bool CanRead => false;
