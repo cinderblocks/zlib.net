@@ -30,7 +30,7 @@ byte[] Compress(byte[] data, int mem = 8, int bits = 15, int level = 6, bool raw
         do
         {
             z.next_out = output; z.next_out_index = 0; z.avail_out = output.Length;
-            status = z.deflate(4); if (status != 0 && status != 1) throw new Exception(z.msg);
+            status = z.deflate(4); if (status != 0 && status != 1) { throw new Exception(z.msg); }
             sink.Write(output, 0, z.next_out_index);
         } while (status != 1);
         return sink.ToArray();
@@ -53,7 +53,7 @@ foreach (var (name, data) in dataSets)
 foreach (int mem in new[] { 6, 8 })
 {
     string label = $"compress/{name}/mem{mem}";
-    if (!label.Contains(filter, StringComparison.Ordinal)) continue;
+    if (!label.Contains(filter, StringComparison.Ordinal)) { continue; }
     var packed = Compress(data, mem);
     Validate(data, packed);
     var z = new ZStream(); z.dstate = new Deflate(); z.dstate.deflateInit2(z, 6, 8, 15, mem, 0);
