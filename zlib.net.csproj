@@ -5,7 +5,7 @@
     <PackageId>ZlibCore</PackageId>
     <Product>zlib.net</Product>
     <Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
-    <Copyright>Copyright Â© 2006-2007, ComponentAce, 2022-2025 Sjofn LLC</Copyright>
+    <Copyright>Copyright Ã‚Â© 2006-2007, ComponentAce, 2022-2025 Sjofn LLC</Copyright>
     <AssemblyTitle>zlib.net</AssemblyTitle>
     <Version>2.0.1</Version>
     <Company>ComponentAce</Company>
@@ -47,6 +47,8 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="LICENSE" Pack="true" PackagePath="" />
+    <None Include="THIRD_PARTY_NOTICES.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>

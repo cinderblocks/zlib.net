@@ -49,7 +49,7 @@ namespace ComponentAce.Compression.Libs.zlib
 	public static class zlibConst
 	{
 		private const System.String version_Renamed_Field = "1.0.2";
-		/// <summary>Returns the zlib version this library is based on.</summary>
+		/// <summary>Returns the inherited port API version string, not the package version or the native zlib version.</summary>
 		public static System.String version()
 		{
 			return version_Renamed_Field;

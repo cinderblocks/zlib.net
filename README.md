@@ -7,6 +7,14 @@ Managed version of the ZLIB compression library ported to .NET Core
 
 This port is based on the 100% managed version of the library from [ComponentAce](http://www.componentace.com/zlib_.NET.htm).
 
+## Provenance and upstream fixes
+
+The implementation comes from ComponentAce ZLIB.NET, whose source credits JCraft's JZlib Java implementation and Lapo Luchini's stream wrappers. The engine headers identify native zlib 1.1.3 as their base. The exact imported JZlib snapshot is not recorded; `zlibConst.version()` retains the historical `1.0.2` API string and does not report the package or native zlib version.
+
+Useful upstream references are [JCraft JZlib](https://www.jcraft.com/jzlib/), the [JRuby-maintained fork](https://github.com/jruby/jzlib), and [native zlib](https://github.com/madler/zlib). This port has diverged; fixes must be checked against its state machine and managed buffers individually.
+
+The raw-DEFLATE terminal Huffman lookup correction follows [SharpCompress PR #118](https://github.com/adamhathcock/sharpcompress/pull/118): an available terminal entry can require fewer bits than the table lookup width, so the decoder must not demand a dummy byte. Both length and distance lookups have the correction, with raw-stream regression coverage. Source attribution and distribution notices are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
+
 ## Installation
 
 ```
@@ -64,6 +72,15 @@ Switch the package reference to `ZlibCore`. The namespace and assembly name are 
 - `ZOutputStream.finish()`/`end()` and `ZInputStream.read()`/`skip()` are renamed `Finish()`/`End()`/`Read()`; the old names still work but are marked `[Obsolete]`.
 - `SupportClass` and `Deflate` were never meant to be public and are now internal.
 - New: both streams take a `leaveOpen` argument to keep the underlying stream open on dispose.
+
+## Stream validation and buffering
+
+- Decompression-mode `ZOutputStream` accepts one zlib stream. Trailing bytes and additional members are rejected. Non-empty writes after stream completion throw `InvalidOperationException`; repeated `Finish()` / `FinishAsync()` calls are safe.
+- `Finish()`, `FinishAsync()`, `Dispose()`, and `DisposeAsync()` propagate output failures. Disposal still releases codec resources and closes the underlying stream unless `leaveOpen` is true. After a failed codec/output operation, disposal cleans up without retrying the failed operation.
+- Compression constructors validate levels (-1 through 9); writes validate buffer ranges before changing codec state.
+- The default output buffer is now 16 KB. For example, use `new ZOutputStream(target, level: 6, leaveOpen: true, bufferSize: 32768)` to select 32 KB, or `new ZOutputStream(target, leaveOpen: true, bufferSize: 32768)` to decompress with that size.
+
+These error-reporting and assembly-signing changes can affect existing consumers; rebuild and test when upgrading.
 
 ## Building
 

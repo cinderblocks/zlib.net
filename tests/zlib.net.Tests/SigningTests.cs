@@ -30,7 +30,6 @@ namespace zlib.net.Tests
             int pe = BitConverter.ToInt32(image, 0x3c);
             int sections = BitConverter.ToUInt16(image, pe + 6);
             int optional = pe + 24;
-            int headerSize = BitConverter.ToInt32(image, optional + 60);
             int directory = optional + (BitConverter.ToUInt16(image, optional) == 0x20b ? 112 : 96);
             int sectionTable = optional + BitConverter.ToUInt16(image, pe + 20);
             Func<int, int> offset = rva =>
