@@ -337,6 +337,12 @@ namespace ComponentAce.Compression.Libs.zlib
 						b >>= j;
 						k -= j;
 						
+						if (dist > s.history)
+						{
+							z.msg = "invalid distance too far back";
+							mode = BADCODE;
+							goto case BADCODE;
+						}
 						mode = COPY;
 						goto case COPY;
 					
@@ -377,6 +383,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							}
 							
 							s.window[q++] = s.window[f++]; m--;
+							s.AddHistory(1);
 							
 							if (f == s.end)
 								f = 0;
@@ -413,6 +420,7 @@ namespace ComponentAce.Compression.Libs.zlib
 						r = Z_OK;
 						
 						s.window[q++] = (byte) lit; m--;
+						s.AddHistory(1);
 						
 						mode = START;
 						break;
@@ -526,6 +534,7 @@ namespace ComponentAce.Compression.Libs.zlib
 					b >>= (tp[(tp_index + t) * 3 + 1]); k -= (tp[(tp_index + t) * 3 + 1]);
 					
 					s.window[q++] = (byte) tp[(tp_index + t) * 3 + 2];
+					s.AddHistory(1);
 					m--;
 					continue;
 				}
@@ -574,6 +583,16 @@ namespace ComponentAce.Compression.Libs.zlib
 								
 								b >>= (e); k -= (e);
 								
+								if (d > s.history)
+								{
+									z.msg = "invalid distance too far back";
+									c = z.avail_in - n; c = Math.Min(k >> 3, c); n += c; p -= c; k -= c << 3;
+									s.bitb = b; s.bitk = k;
+									z.avail_in = n; z.total_in += p - z.next_in_index; z.next_in_index = p;
+									s.write = q;
+									return Z_DATA_ERROR;
+								}
+								s.AddHistory(c);
 								// do the copy
 								m -= c;
 								if (q >= d)
@@ -672,6 +691,7 @@ namespace ComponentAce.Compression.Libs.zlib
 							b >>= (tp[(tp_index + t) * 3 + 1]); k -= (tp[(tp_index + t) * 3 + 1]);
 							
 							s.window[q++] = (byte) tp[(tp_index + t) * 3 + 2];
+					s.AddHistory(1);
 							m--;
 							break;
 						}
