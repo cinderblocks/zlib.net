@@ -104,11 +104,52 @@ foreach (int group in new[] { 1, 10, 100 })
         return sink.Length;
     });
 }
+foreach (var (name, data) in dataSets.Where(p => p.Key is "small" or "random" or "text"))
+foreach (int level in new[] { 0, 6 })
+foreach (bool span in new[] { false, true })
+{
+    string label = $"write/{name}/level{level}/{(span ? "span" : "array")}";
+    if (!label.Contains(filter, StringComparison.Ordinal)) continue;
+    using var z = new ZOutputStream(Stream.Null, level, true); z.Finish();
+    Measure(label, () =>
+    {
+        z.Reset();
+        if (span) z.Write(data.AsSpan()); else z.Write(data, 0, data.Length);
+        z.Finish(); return z.TotalOut;
+    });
+}
+foreach (int size in new[] { 4096, 65536, 1048576 })
+foreach (bool raw in new[] { false, true })
+{
+    string label = $"decode-direct/stored/{(raw ? "raw" : "wrapped")}/{size}";
+    if (!label.Contains(filter, StringComparison.Ordinal)) continue;
+    byte[] data = dataSets["random"];
+    using var sink = new MemoryStream();
+    using (var packer = new ZLibStream(sink, CompressionLevel.NoCompression, true)) packer.Write(data);
+    byte[] packed = sink.ToArray();
+    if (raw) packed = packed.AsSpan(2, packed.Length - 6).ToArray();
+    var z = new ZStream(); z.inflateInit(raw ? -15 : 15);
+    long Decode()
+    {
+        z.inflateReset(); z.next_in = packed; z.next_in_index = 0; z.avail_in = packed.Length;
+        int status;
+        do
+        {
+            z.next_out = output; z.next_out_index = 0; z.avail_out = size;
+            status = z.inflate(0); if (status != 0 && status != 1) throw new Exception(z.msg);
+        } while (status != 1);
+        if (z.total_out != data.Length) throw new Exception("decoded length");
+        return z.total_out;
+    }
+    try { Measure(label, Decode); }
+    finally { z.inflateEnd(); }
+}
 if (args.Length != 0) File.WriteAllText(args[0], JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
 
 void Measure(string name, Func<long> operation, long payload = 0, string hash = "")
 {
-    var warm = Stopwatch.StartNew(); do { operation(); } while (warm.ElapsedMilliseconds < 200);
+    int warmCount = 0;
+    var warm = Stopwatch.StartNew(); do { operation(); warmCount++; } while (warm.ElapsedMilliseconds < 1000 || warmCount < 64);
     var times = new List<double>(); var allocations = new List<long>(); long value = 0;
     for (int sample = 0; sample < 7; sample++)
     {
