@@ -130,7 +130,6 @@ namespace ComponentAce.Compression.Libs.zlib
 			int n; // bytes available there
 			int q; // output window write pointer
 			int m; // bytes to end of window or read pointer
-			int f; // pointer to copy strings from
 			
 			// copy input/output information to locals (UPDATE macro restores)
 			p = z.next_in_index; n = z.avail_in; b = s.bitb; k = s.bitk;
@@ -357,12 +356,6 @@ namespace ComponentAce.Compression.Libs.zlib
 						goto case COPY;
 					
 					case COPY:  // o: copying bytes in window, waiting for space
-						f = q - dist;
-						while (f < 0)
-						{
-							// modulo window size-"while" instead
-							f += s.end; // of "if" handles invalid distances
-						}
 						while (len != 0)
 						{
 							
@@ -392,12 +385,9 @@ namespace ComponentAce.Compression.Libs.zlib
 								}
 							}
 							
-							s.window[q++] = s.window[f++]; m--;
-							s.AddHistory(1);
-							
-							if (f == s.end)
-								f = 0;
-							len--;
+							int copied = Math.Min(len, m);
+							s.CopyMatch(q, dist, copied);
+							q += copied; m -= copied; len -= copied;
 						}
 						mode = START;
 						break;
@@ -514,7 +504,6 @@ namespace ComponentAce.Compression.Libs.zlib
 			int md; // mask for distance tree
 			int c; // bytes to copy
 			int d; // distance back to copy from
-			int r; // copy source pointer
 			
 			// load input, output, bit values
 			p = z.next_in_index; n = z.avail_in; b = s.bitb; k = s.bitk;
@@ -602,70 +591,9 @@ namespace ComponentAce.Compression.Libs.zlib
 									s.write = q;
 									return Z_DATA_ERROR;
 								}
-								s.AddHistory(c);
-								// do the copy
-								m -= c;
-								if (q >= d)
-								{
-									// offset before dest
-									//  just copy
-									r = q - d;
-									if (q - r > 0 && 2 > (q - r))
-									{
-										s.window[q++] = s.window[r++]; c--; // minimum count is three,
-										s.window[q++] = s.window[r++]; c--; // so unroll loop a little
-									}
-									else
-									{
-										Array.Copy(s.window, r, s.window, q, 2);
-										q += 2; r += 2; c -= 2;
-									}
-								}
-								else
-								{
-									// else offset after destination
-									r = q - d;
-									do 
-									{
-										r += s.end; // force pointer in window
-									}
-									while (r < 0); // covers invalid distances
-									e = s.end - r;
-									if (c > e)
-									{
-										// if source crosses,
-										c -= e; // wrapped copy
-										if (q - r > 0 && e > (q - r))
-										{
-											do 
-											{
-												s.window[q++] = s.window[r++];
-											}
-											while (--e != 0);
-										}
-										else
-										{
-											Array.Copy(s.window, r, s.window, q, e);
-											q += e; r += e; e = 0;
-										}
-										r = 0; // copy rest from start of window
-									}
-								}
-								
-								// copy all or what's left
-								if (q - r > 0 && c > (q - r))
-								{
-									do 
-									{
-										s.window[q++] = s.window[r++];
-									}
-									while (--c != 0);
-								}
-								else
-								{
-									Array.Copy(s.window, r, s.window, q, c);
-									q += c; r += c; c = 0;
-								}
+								s.CopyMatch(q, d, c);
+								m -= c; q += c;
+								c = 0;
 								break;
 							}
 							else if ((e & 64) == 0)
