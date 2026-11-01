@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="StrongName.props" />
   <PropertyGroup>
     <!-- 2.0 replaces the misspelled "zlib.net-mutliplatform" ID, which stays on nuget.org at 1.x. -->
     <PackageId>ZlibCore</PackageId>
     <Product>zlib.net</Product>
     <Description>ZLIB.NET is a 100% managed version of ZLIB compression library which implements deflate and inflate compression algorithms.</Description>
-    <Copyright>Copyright © 2006-2007, ComponentAce, 2022-2025 Sjofn LLC</Copyright>
+    <Copyright>Copyright Â© 2006-2007, ComponentAce, 2022-2025 Sjofn LLC</Copyright>
     <AssemblyTitle>zlib.net</AssemblyTitle>
     <Version>2.0.1</Version>
     <Company>ComponentAce</Company>
@@ -49,7 +50,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="zlib.net.Tests" />
-    <InternalsVisibleTo Include="zlib.net.Benchmarks" />
+    <InternalsVisibleTo Include="zlib.net.Tests" Key="$(ZlibPublicKey)" />
+    <InternalsVisibleTo Include="zlib.net.Benchmarks" Key="$(ZlibPublicKey)" />
   </ItemGroup>
 </Project>

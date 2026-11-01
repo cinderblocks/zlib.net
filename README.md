@@ -71,3 +71,10 @@ Switch the package reference to `ZlibCore`. The namespace and assembly name are 
 dotnet test
 dotnet pack zlib.net.csproj -c Release
 ```
+
+## Strong naming
+
+All library targets are fully strong-name signed with the checked-in zlib.snk key.
+The public key token is d3655c1a090d0873. The test and benchmark friend assemblies use the same key; no signing secret or platform-specific signing tool is needed to build.
+
+This establishes a stable assembly identity and supports consumers that require signed references. It changes the identity of the previously unsigned assembly, so rebuild consumers and check assembly-qualified names when upgrading. The source-distribution key is public and is not a publisher-authentication credential. Keep it stable across releases.
