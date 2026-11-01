@@ -242,7 +242,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// this function so some applications may wish to modify it to avoid
 		// allocating a large strm->next_in buffer and copying from it.
 		// (See also flush_pending()).
-		internal int read_buf(byte[] buf, int start, int size)
+		internal int read_buf(byte[] buf, int start, int size, DeflateInput input)
 		{
 			int len = avail_in;
 			
@@ -253,11 +253,11 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			avail_in -= len;
 			
+			input.CopyTo(next_in_index, buf, start, len);
 			if (dstate!.noheader == 0)
 			{
-				adler = Adler32.adler32(adler, next_in, next_in_index, len);
+				adler = Adler32.adler32(adler, buf, start, len);
 			}
-			Array.Copy(next_in!, next_in_index, buf, start, len);
 			next_in_index += len;
 			total_in += len;
 			return len;

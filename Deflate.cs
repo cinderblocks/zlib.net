@@ -837,7 +837,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// only for the level=0 compression option.
 		// NOTE: this function should be optimized to avoid extra copying from
 		// window to pending_buf.
-		internal int deflate_stored(int flush)
+		internal int deflate_stored(int flush, DeflateInput input)
 		{
 			// Stored blocks are limited to 0xffff bytes, pending_buf is limited
 			// to pending_buf_size, and each stored block has a 5 byte header:
@@ -856,7 +856,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				// Fill the window as much as possible:
 				if (lookahead <= 1)
 				{
-					fill_window();
+					fill_window(input);
 					if (lookahead == 0 && flush == Z_NO_FLUSH)
 						return NeedMore;
 					if (lookahead == 0)
@@ -1006,7 +1006,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		//    At least one byte has been read, or avail_in == 0; reads are
 		//    performed for at least two bytes (required for the zip translate_eol
 		//    option -- not supported here).
-		internal void  fill_window()
+		internal void  fill_window(DeflateInput input)
 		{
 			int n;
 			int more; // Amount of free space at the end of the window.
@@ -1063,7 +1063,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				// Otherwise, window_size == 2*WSIZE so more >= 2.
 				// If there was sliding, more >= WSIZE. So in all cases, more >= 2.
 				
-				n = strm.read_buf(window, strstart + lookahead, more);
+				n = strm.read_buf(window, strstart + lookahead, more, input);
 				lookahead += n;
 				
 				// Initialize the hash value now that we have some input:
@@ -1083,7 +1083,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// This function does not perform lazy evaluation of matches and inserts
 		// new strings in the dictionary only for unmatched strings or for short
 		// matches. It is used only for the fast compression options.
-		internal int deflate_fast(int flush)
+		internal int deflate_fast(int flush, DeflateInput input)
 		{
 			//    short hash_head = 0; // head of the hash chain
 			int hash_head = 0; // head of the hash chain
@@ -1097,7 +1097,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				// string following the next match.
 				if (lookahead < MIN_LOOKAHEAD)
 				{
-					fill_window();
+					fill_window(input);
 					if (lookahead < MIN_LOOKAHEAD && flush == Z_NO_FLUSH)
 					{
 						return NeedMore;
@@ -1200,7 +1200,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// Same as above, but achieves better compression. We use a lazy
 		// evaluation for matches: a match is finally adopted only if there is
 		// no better match at the next window position.
-		internal int deflate_slow(int flush)
+		internal int deflate_slow(int flush, DeflateInput input)
 		{
 			//    short hash_head = 0;    // head of hash chain
 			int hash_head = 0; // head of hash chain
@@ -1216,7 +1216,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				
 				if (lookahead < MIN_LOOKAHEAD)
 				{
-					fill_window();
+					fill_window(input);
 					if (lookahead < MIN_LOOKAHEAD && flush == Z_NO_FLUSH)
 					{
 						return NeedMore;
@@ -1640,6 +1640,11 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		internal int deflate(ZStream strm, int flush)
 		{
+			return deflate(strm, flush, new DeflateInput(strm.next_in));
+		}
+
+		internal int deflate(ZStream strm, int flush, DeflateInput input)
+		{
 			int old_flush;
 			
 			if (flush > Z_FINISH || flush < 0)
@@ -1729,15 +1734,15 @@ namespace ComponentAce.Compression.Libs.zlib
 				{
 					
 					case STORED: 
-						bstate = deflate_stored(flush);
+						bstate = deflate_stored(flush, input);
 						break;
 					
 					case FAST: 
-						bstate = deflate_fast(flush);
+						bstate = deflate_fast(flush, input);
 						break;
 					
 					case SLOW: 
-						bstate = deflate_slow(flush);
+						bstate = deflate_slow(flush, input);
 						break;
 				}
 				

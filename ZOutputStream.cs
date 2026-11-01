@@ -189,12 +189,15 @@ namespace ComponentAce.Compression.Libs.zlib
         private int Step(int mode, bool finishing) => Step(mode, finishing, buf, bufsize);
 
         private int Step(int mode, bool finishing, byte[] output, int size)
+            => Step(mode, finishing, output, size, new DeflateInput(z.next_in));
+
+        private int Step(int mode, bool finishing, byte[] output, int size, DeflateInput input)
         {
             int before = z.avail_in;
             z.next_out = output;
             z.next_out_index = 0;
             z.avail_out = size;
-            int status = compress ? z.deflate(mode) : z.inflate(mode);
+            int status = compress ? z.dstate!.deflate(z, mode, input) : z.inflate(mode);
             int produced = size - z.avail_out;
             if (status == zlibConst.Z_STREAM_END)
             {
@@ -265,6 +268,31 @@ namespace ComponentAce.Compression.Libs.zlib
             ThrowIfDisposed();
             if (buffer.Length == 0)
                 return;
+
+            if (compress)
+            {
+                ThrowIfCompleted();
+                z.next_in = Array.Empty<byte>();
+                z.next_in_index = 0;
+                z.avail_in = buffer.Length;
+                var input = new DeflateInput(buffer);
+                try
+                {
+                    do
+                    {
+                        int produced = Step(flush_Renamed_Field, false, buf, bufsize, input);
+                        if (produced > 0) out_Renamed!.Write(buf, 0, produced);
+                    }
+                    while (!finished && (z.avail_in > 0 || z.avail_out == 0));
+                }
+                catch { failed = true; throw; }
+                finally
+                {
+                    z.next_in_index = z.avail_in = 0;
+                    z.next_out = null;
+                }
+                return;
+            }
 
             byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Math.Min(buffer.Length, SpanChunkSize));
             try
