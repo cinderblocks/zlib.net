@@ -134,12 +134,11 @@ namespace ComponentAce.Compression.Libs.zlib
 			if (count == 0 || finished)
 				return 0;
 
-			do
+			while (Step(count))
 			{
 				if (z.avail_in == 0 && !nomoreinput)
 					SetInput(in_Renamed.Read(buf, 0, bufsize));
 			}
-			while (Step(count));
 			return count - z.avail_out;
 		}
 
@@ -150,13 +149,12 @@ namespace ComponentAce.Compression.Libs.zlib
 			if (count == 0 || finished)
 				return 0;
 
-			do
+			while (Step(count))
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 				if (z.avail_in == 0 && !nomoreinput)
 					SetInput(await in_Renamed.ReadAsync(buf, 0, bufsize, cancellationToken).ConfigureAwait(false));
 			}
-			while (Step(count));
 			return count - z.avail_out;
 		}
 
@@ -256,6 +254,9 @@ namespace ComponentAce.Compression.Libs.zlib
 				finished = true;
 				return false;
 			}
+			// No input is needed while the window can still deliver decoded bytes.
+			if (err == zlibConst.Z_BUF_ERROR && !nomoreinput && z.avail_in == 0)
+				return z.avail_out == count;
 			if (err == zlibConst.Z_BUF_ERROR && !compress && nomoreinput && z.avail_in == 0)
 			{
 				if (z.avail_out == count)
