@@ -16,9 +16,9 @@
     <PackageTags>zlib;deflate;compression</PackageTags>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageProjectUrl>https://github.com/cinderblocks/zlib.net</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/cinderblocks/ZlibCore</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/cinderblocks/zlib.net.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/cinderblocks/ZlibCore.git</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>

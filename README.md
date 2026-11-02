@@ -1,6 +1,6 @@
 # zlib.net
 
-[![CI](https://github.com/cinderblocks/zlib.net/actions/workflows/ci.yml/badge.svg)](https://github.com/cinderblocks/zlib.net/actions/workflows/ci.yml)
+[![CI](https://github.com/cinderblocks/ZlibCore/actions/workflows/ci.yml/badge.svg)](https://github.com/cinderblocks/ZlibCore/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/ZlibCore.svg)](https://www.nuget.org/packages/ZlibCore)
 
 Managed version of the ZLIB compression library ported to .NET Core
