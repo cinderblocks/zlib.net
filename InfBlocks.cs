@@ -47,7 +47,6 @@ namespace ComponentAce.Compression.Libs.zlib
 {
 	internal sealed class InfBlocks
 	{
-		private const int MANY = 1440;
 		
 		// And'ing with mask[n] masks the lower n bits		
 		private static readonly int[] inflate_mask = {0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff};
@@ -86,6 +85,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		internal int[] bb = new int[1]; // bit length tree depth 
 		internal int[] tb = new int[1]; // bit length decoding tree 
 		
+		private InfTree.Workspace workspace;
 		internal InfCodes codes; // if CODES, current state 
 		
 		internal int last; // true if this block is the last block 
@@ -104,8 +104,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		internal InfBlocks(ZStream z, Object checkfn, int w)
 		{
-			hufts = new int[MANY * 3];
-			window = new byte[w];
+			window = InflateBuffers.RentWindow(w);
 			end = w;
 			this.checkfn = checkfn;
 			mode = TYPE;
@@ -116,10 +115,6 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			if (c != null)
 				c[0] = check;
-			if (mode == BTREE || mode == DTREE)
-			{
-				blens = null;
-			}
 			if (mode == CODES)
 			{
 				codes.free(z);
@@ -198,16 +193,8 @@ namespace ComponentAce.Compression.Libs.zlib
 								break;
 							
 							case 1:  // fixed
-								{
-									int[] bl = new int[1];
-									int[] bd = new int[1];
-									int[][] tl = new int[1][];
-									int[][] td = new int[1][];
-									
-									InfTree.inflate_trees_fixed(bl, bd, tl, td, z);
-									codes = new InfCodes(bl[0], bd[0], tl[0], td[0], z);
-								}
-								
+								SetCodes(InfTree.fixed_bl, InfTree.fixed_bd, InfTree.fixed_tl, 0, InfTree.fixed_td, 0, z);
+
 								{
 									b = SupportClass.URShift(b, (3)); k -= (3);
 								}
@@ -360,7 +347,10 @@ namespace ComponentAce.Compression.Libs.zlib
 							return inflate_flush(z, r);
 						}
 						t = 258 + (t & 0x1f) + ((t >> 5) & 0x1f);
-						blens = new int[t];
+						hufts ??= InflateBuffers.RentTable();
+						workspace ??= new InfTree.Workspace();
+						blens ??= new int[320];
+						Array.Clear(blens, 0, blens.Length);
 						
 						{
 							b = SupportClass.URShift(b, (14)); k -= (14);
@@ -405,13 +395,12 @@ namespace ComponentAce.Compression.Libs.zlib
 						}
 						
 						bb[0] = 7;
-						t = InfTree.inflate_trees_bits(blens, bb, tb, hufts, z);
+						t = InfTree.inflate_trees_bits(blens, bb, tb, hufts, z, workspace);
 						if (t != Z_OK)
 						{
 							r = t;
 							if (r == Z_DATA_ERROR)
 							{
-								blens = null;
 								mode = BAD;
 							}
 							
@@ -506,7 +495,6 @@ namespace ComponentAce.Compression.Libs.zlib
 								t = table;
 								if (i + j > 258 + (t & 0x1f) + ((t >> 5) & 0x1f) || (c == 16 && i < 1))
 								{
-									blens = null;
 									mode = BAD;
 									z.msg = "invalid bit length repeat";
 									r = Z_DATA_ERROR;
@@ -529,21 +517,20 @@ namespace ComponentAce.Compression.Libs.zlib
 						
 						tb[0] = - 1;
 						{
-							int[] bl = new int[1];
-							int[] bd = new int[1];
-							int[] tl = new int[1];
-							int[] td = new int[1];
+							int[] bl = workspace.LiteralBits;
+							int[] bd = workspace.DistanceBits;
+							int[] tl = workspace.LiteralTable;
+							int[] td = workspace.DistanceTable;
 							
 							
 							bl[0] = 9; // must be <= 9 for lookahead assumptions
 							bd[0] = 6; // must be <= 9 for lookahead assumptions
 							t = table;
-							t = InfTree.inflate_trees_dynamic(257 + (t & 0x1f), 1 + ((t >> 5) & 0x1f), blens, bl, bd, tl, td, hufts, z);
+							t = InfTree.inflate_trees_dynamic(257 + (t & 0x1f), 1 + ((t >> 5) & 0x1f), blens, bl, bd, tl, td, hufts, z, workspace);
 							if (t != Z_OK)
 							{
 								if (t == Z_DATA_ERROR)
 								{
-									blens = null;
 									mode = BAD;
 								}
 								r = t;
@@ -554,9 +541,8 @@ namespace ComponentAce.Compression.Libs.zlib
 								return inflate_flush(z, r);
 							}
 							
-							codes = new InfCodes(bl[0], bd[0], hufts, tl[0], hufts, td[0], z);
+							SetCodes(bl[0], bd[0], hufts, tl[0], hufts, td[0], z);
 						}
-						blens = null;
 						mode = CODES;
 						goto case CODES;
 					
@@ -626,11 +612,24 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 		}
 		
+		private void SetCodes(int bl, int bd, int[] tl, int tlIndex, int[] td, int tdIndex, ZStream z)
+		{
+			if (codes == null) { codes = new InfCodes(bl, bd, tl, tlIndex, td, tdIndex, z); }
+			else { codes.Init(bl, bd, tl, tlIndex, td, tdIndex); }
+		}
+
 		internal void  free(ZStream z)
 		{
 			reset(z, null);
+			byte[] releasedWindow = window;
+			int[] releasedTables = hufts;
 			window = null;
 			hufts = null;
+			blens = null;
+			workspace = null;
+			codes = null;
+			InflateBuffers.ReturnWindow(releasedWindow);
+			InflateBuffers.ReturnTable(releasedTables);
 			//ZFREE(z, s);
 		}
 		

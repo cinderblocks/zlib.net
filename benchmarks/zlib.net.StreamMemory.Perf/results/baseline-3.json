@@ -1,0 +1,86 @@
+[
+  {
+    "Name": "compress/empty",
+    "Milliseconds": 0.014323600171845911,
+    "AllocatedBytes": 285248,
+    "Value": 8
+  },
+  {
+    "Name": "compress/2KiB",
+    "Milliseconds": 0.03568059222261862,
+    "AllocatedBytes": 285248,
+    "Value": 1335
+  },
+  {
+    "Name": "compress/1MiB-array",
+    "Milliseconds": 22.34626,
+    "AllocatedBytes": 293488,
+    "Value": 693817
+  },
+  {
+    "Name": "compress/1MiB-span",
+    "Milliseconds": 22.42294,
+    "AllocatedBytes": 293488,
+    "Value": 693817
+  },
+  {
+    "Name": "inflate/fixed-small",
+    "Milliseconds": 0.0012778295861011753,
+    "AllocatedBytes": 59112,
+    "Value": 7
+  },
+  {
+    "Name": "inflate/fixed-10000-empty-blocks",
+    "Milliseconds": 0.3447955326460481,
+    "AllocatedBytes": 2138904,
+    "Value": 0
+  },
+  {
+    "Name": "inflate/fixed-one-empty-block",
+    "Milliseconds": 0.0016026164420873856,
+    "AllocatedBytes": 59112,
+    "Value": 0
+  },
+  {
+    "Name": "inflate/dynamic-many-blocks",
+    "Milliseconds": 6.145411764705882,
+    "AllocatedBytes": 526250,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/stored",
+    "Milliseconds": 0.14905394932935914,
+    "AllocatedBytes": 58904,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-sync",
+    "Milliseconds": 0.24644581280788178,
+    "AllocatedBytes": 62544,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/text-sync",
+    "Milliseconds": 5.482742105263158,
+    "AllocatedBytes": 241482,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-memory-async",
+    "Milliseconds": 0.25205163727959695,
+    "AllocatedBytes": 81048,
+    "Value": 1048576
+  },
+  {
+    "Name": "inflate/zeros-array-async",
+    "Milliseconds": 0.25599335038363175,
+    "AllocatedBytes": 81048,
+    "Value": 1048576
+  },
+  {
+    "Name": "flush/100-messages",
+    "Milliseconds": 0.5689130681818182,
+    "AllocatedBytes": 288224,
+    "Value": 2638
+  }
+]

@@ -1,0 +1,25 @@
+.NET 8.0.28; Microsoft Windows 10.0.26200; Arm64
+compress/empty: 0.0115 ms, 22920 B/op, result=8
+compress/2KiB: 0.0345 ms, 22920 B/op, result=1335
+compress/1MiB-array: 21.8485 ms, 22928 B/op, result=693817
+compress/1MiB-span: 22.0154 ms, 22928 B/op, result=693817
+inflate/fixed-small: 0.0009 ms, 41696 B/op, result=7
+inflate/fixed-10000-empty-blocks: 0.2019 ms, 41696 B/op, result=0
+inflate/fixed-one-empty-block: 0.0008 ms, 41696 B/op, result=0
+inflate/dynamic-many-blocks: 5.4608 ms, 62042 B/op, result=1048576
+inflate/stored: 0.1446 ms, 41616 B/op, result=1048576
+inflate/zeros-sync: 0.2480 ms, 62040 B/op, result=1048576
+inflate/text-sync: 5.4934 ms, 62042 B/op, result=1048576
+inflate/zeros-memory-async: 0.2640 ms, 62040 B/op, result=1048576
+inflate/zeros-array-async: 0.2433 ms, 80472 B/op, result=1048576
+flush/100-messages: 0.6254 ms, 32656 B/op, result=4214
+compress/reused-2KiB: 0.0299 ms, 0 B/op, result=1335
+compress/reused-empty: 0.0084 ms, 0 B/op, result=8
+retained/caller-input=False
+retained/caller-output=False
+retained/disposed-source=False
+latency/decoded-before-trailer-read=50000
+flush/visible-message-bytes=7
+state/CanWrite-after-Finish=False
+state/CanWrite-after-End=False
+cancellation/empty-read=observed

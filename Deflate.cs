@@ -158,6 +158,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		internal ZStream strm; // pointer back to this zlib stream
 		internal int status; // as the name implies
+		private DeflateBuffers pooledBuffers;
 		internal byte[] pending_buf; // output still pending
 		internal int pending_buf_size; // size of pending_buf
 		internal int pending_out; // next pending byte to output to the stream
@@ -250,6 +251,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		
 		// number of codes at each bit length for an optimal tree
 		internal short[] bl_count = new short[MAX_BITS + 1];
+		internal short[] next_code = new short[MAX_BITS + 1];
 		
 		// heap used to build the Huffman trees
 		internal int[] heap = new int[2 * L_CODES + 1];
@@ -288,7 +290,6 @@ namespace ComponentAce.Compression.Libs.zlib
 
 		internal int opt_len; // bit length of current block with optimal trees
 		internal int static_len; // bit length of current block with static trees
-		internal int matches; // number of string matches in current block
 		internal int last_eob_len; // bit length of EOB code for last block
 		
 		// Output buffer. bits are inserted starting at the bottom (least
@@ -310,11 +311,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			window_size = 2 * w_size;
 			
-			head[hash_size - 1] = 0;
-			for (int i = 0; i < hash_size - 1; i++)
-			{
-				head[i] = 0;
-			}
+			Array.Clear(head, 0, hash_size);
 			
 			// Set the default configuration parameters:
 			max_lazy_match = config_table[level].max_lazy;
@@ -363,7 +360,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			dyn_ltree[END_BLOCK * 2] = 1;
 			opt_len = static_len = 0;
-			last_lit = matches = 0;
+			last_lit = 0;
 		}
 		
 		// Restore the heap property by moving down the tree starting at node k,
@@ -667,27 +664,14 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 			else
 			{
-				matches++;
 				// Here, lc is the match length - MIN_MATCH
 				dist--; // dist = match distance - 1
 				dyn_ltree[(Tree._length_code[lc] + LITERALS + 1) * 2]++;
 				dyn_dtree[Tree.d_code(dist) * 2]++;
 			}
 			
-			if ((last_lit & 0x1fff) == 0 && level > 2)
-			{
-				// Compute an upper bound for the compressed length
-				int out_length = last_lit * 8;
-				int in_length = strstart - block_start;
-				int dcode;
-				for (dcode = 0; dcode < D_CODES; dcode++)
-				{
-					out_length = (int) (out_length + dyn_dtree[dcode * 2] * (5L + Tree.extra_dbits[dcode]));
-				}
-				out_length = SupportClass.URShift(out_length, 3);
-				if ((matches < (last_lit / 2)) && out_length < in_length / 2)
-					return true;
-			}
+			// Native zlib's optional TRUNCATE_BLOCK heuristic was unconditional in this port.
+			// Let symbol capacity (or the caller's flush) end a block instead of guessing its cost.
 			
 			return (last_lit == lit_bufsize - 1);
 			// We avoid equality with lit_bufsize because of wraparound at 64K
@@ -839,7 +823,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// only for the level=0 compression option.
 		// NOTE: this function should be optimized to avoid extra copying from
 		// window to pending_buf.
-		internal int deflate_stored(int flush)
+		internal int deflate_stored(int flush, in DeflateInput input)
 		{
 			// Stored blocks are limited to 0xffff bytes, pending_buf is limited
 			// to pending_buf_size, and each stored block has a 5 byte header:
@@ -858,7 +842,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				// Fill the window as much as possible:
 				if (lookahead <= 1)
 				{
-					fill_window();
+					fill_window(input);
 					if (lookahead == 0 && flush == Z_NO_FLUSH)
 						return NeedMore;
 					if (lookahead == 0)
@@ -1008,7 +992,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		//    At least one byte has been read, or avail_in == 0; reads are
 		//    performed for at least two bytes (required for the zip translate_eol
 		//    option -- not supported here).
-		internal void  fill_window()
+		internal void  fill_window(in DeflateInput input)
 		{
 			int n;
 			int more; // Amount of free space at the end of the window.
@@ -1065,7 +1049,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				// Otherwise, window_size == 2*WSIZE so more >= 2.
 				// If there was sliding, more >= WSIZE. So in all cases, more >= 2.
 				
-				n = strm.read_buf(window, strstart + lookahead, more);
+				n = strm.read_buf(window, strstart + lookahead, more, input);
 				lookahead += n;
 				
 				// Initialize the hash value now that we have some input:
@@ -1085,7 +1069,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// This function does not perform lazy evaluation of matches and inserts
 		// new strings in the dictionary only for unmatched strings or for short
 		// matches. It is used only for the fast compression options.
-		internal int deflate_fast(int flush)
+		internal int deflate_fast(int flush, in DeflateInput input)
 		{
 			//    short hash_head = 0; // head of the hash chain
 			int hash_head = 0; // head of the hash chain
@@ -1099,7 +1083,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				// string following the next match.
 				if (lookahead < MIN_LOOKAHEAD)
 				{
-					fill_window();
+					fill_window(input);
 					if (lookahead < MIN_LOOKAHEAD && flush == Z_NO_FLUSH)
 					{
 						return NeedMore;
@@ -1202,7 +1186,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// Same as above, but achieves better compression. We use a lazy
 		// evaluation for matches: a match is finally adopted only if there is
 		// no better match at the next window position.
-		internal int deflate_slow(int flush)
+		internal int deflate_slow(int flush, in DeflateInput input)
 		{
 			//    short hash_head = 0;    // head of hash chain
 			int hash_head = 0; // head of hash chain
@@ -1218,7 +1202,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				
 				if (lookahead < MIN_LOOKAHEAD)
 				{
-					fill_window();
+					fill_window(input);
 					if (lookahead < MIN_LOOKAHEAD && flush == Z_NO_FLUSH)
 					{
 						return NeedMore;
@@ -1424,11 +1408,15 @@ namespace ComponentAce.Compression.Libs.zlib
 					ulong diff = BitConverter.ToUInt64(win, scan + off) ^ BitConverter.ToUInt64(win, match + off);
 					if (diff != 0)
 					{
+#if NETCOREAPP3_0_OR_GREATER
+						int n = off + (System.Numerics.BitOperations.TrailingZeroCount(diff) >> 3);
+#else
 						int n = 0;
 						if ((diff & 0xFFFFFFFFUL) == 0) { diff >>= 32; n = 4; }
 						if ((diff & 0xFFFFUL) == 0) { diff >>= 16; n += 2; }
 						if ((diff & 0xFFUL) == 0) n++;
 						n += off;
+#endif
 						return n < MAX_MATCH ? n : MAX_MATCH;
 					}
 				}
@@ -1491,9 +1479,19 @@ namespace ComponentAce.Compression.Libs.zlib
 			hash_mask = hash_size - 1;
 			hash_shift = ((hash_bits + MIN_MATCH - 1) / MIN_MATCH);
 			
-			window = new byte[w_size * 2];
-			prev = new short[w_size];
-			head = new short[hash_size];
+			if (windowBits == 15 && memLevel == 8)
+			{
+				pooledBuffers = DeflateBuffers.Rent();
+				window = pooledBuffers.Window;
+				prev = pooledBuffers.Previous;
+				head = pooledBuffers.Heads;
+			}
+			else
+			{
+				window = new byte[w_size * 2];
+				prev = new short[w_size];
+				head = new short[hash_size];
+			}
 			
 			lit_bufsize = 1 << (memLevel + 6); // 16K elements by default
 			
@@ -1501,7 +1499,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			// Each consumed symbol frees three bytes; a fixed code uses at most 31 bits.
 			// With one byte of headroom per symbol, output cannot overtake unread symbols.
 			// Separate distance and literal regions did not satisfy this invariant.
-			pending_buf = new byte[lit_bufsize * 4];
+			pending_buf = pooledBuffers != null ? pooledBuffers.Pending : new byte[lit_bufsize * 4];
 			pending_buf_size = lit_bufsize * 4;
 			
 			symbol_buf = lit_bufsize;
@@ -1550,6 +1548,9 @@ namespace ComponentAce.Compression.Libs.zlib
 			head = null;
 			prev = null;
 			window = null;
+			var buffers = pooledBuffers;
+			pooledBuffers = null;
+			if (buffers != null) { DeflateBuffers.Return(buffers); }
 			// free
 			// dstate=null;
 			return status == BUSY_STATE?Z_DATA_ERROR:Z_OK;
@@ -1624,6 +1625,11 @@ namespace ComponentAce.Compression.Libs.zlib
 		}
 		
 		internal int deflate(ZStream strm, int flush)
+		{
+			return deflate(strm, flush, new DeflateInput(strm.next_in));
+		}
+
+		internal int deflate(ZStream strm, int flush, in DeflateInput input)
 		{
 			int old_flush;
 			
@@ -1714,15 +1720,15 @@ namespace ComponentAce.Compression.Libs.zlib
 				{
 					
 					case STORED: 
-						bstate = deflate_stored(flush);
+						bstate = deflate_stored(flush, input);
 						break;
 					
 					case FAST: 
-						bstate = deflate_fast(flush);
+						bstate = deflate_fast(flush, input);
 						break;
 					
 					case SLOW: 
-						bstate = deflate_slow(flush);
+						bstate = deflate_slow(flush, input);
 						break;
 				}
 				
@@ -1759,10 +1765,8 @@ namespace ComponentAce.Compression.Libs.zlib
 						// as a special marker by inflate_sync().
 						if (flush == Z_FULL_FLUSH)
 						{
-							//state.head[s.hash_size-1]=0;
-							for (int i = 0; i < hash_size; i++)
-							// forget history
-								head[i] = 0;
+						// Forget history using the runtime's bulk clear.
+						Array.Clear(head, 0, hash_size);
 						}
 					}
 					strm.flush_pending();

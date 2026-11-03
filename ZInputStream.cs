@@ -131,33 +131,51 @@ namespace ComponentAce.Compression.Libs.zlib
 		public override int Read(byte[] buffer, int offset, int count)
 		{
 			Prepare(buffer, offset, count);
-			if (count == 0 || finished)
-				return 0;
-
-			do
+			try
 			{
-				if (z.avail_in == 0 && !nomoreinput)
-					SetInput(in_Renamed.Read(buf, 0, bufsize));
+				if (count == 0 || finished)
+					return 0;
+
+				while (Step(count))
+				{
+					if (z.avail_in == 0 && !nomoreinput)
+						SetInput(in_Renamed.Read(buf, 0, bufsize));
+				}
+				return count - z.avail_out;
 			}
-			while (Step(count));
-			return count - z.avail_out;
+			finally { z.next_out = null; z.next_out_index = z.avail_out = 0; }
 		}
 
 		/// <inheritdoc />
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+		public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+			=> ReadCoreAsync(buffer, offset, count, cancellationToken).AsTask();
+
+		private async ValueTask<int> ReadCoreAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+#else
 		public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+#endif
 		{
 			Prepare(buffer, offset, count);
-			if (count == 0 || finished)
-				return 0;
-
-			do
+			try
 			{
 				cancellationToken.ThrowIfCancellationRequested();
-				if (z.avail_in == 0 && !nomoreinput)
-					SetInput(await in_Renamed.ReadAsync(buf, 0, bufsize, cancellationToken).ConfigureAwait(false));
+				if (count == 0 || finished)
+					return 0;
+
+				while (Step(count))
+				{
+					cancellationToken.ThrowIfCancellationRequested();
+					if (z.avail_in == 0 && !nomoreinput)
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
+						SetInput(await in_Renamed.ReadAsync(buf.AsMemory(0, bufsize), cancellationToken).ConfigureAwait(false));
+#else
+						SetInput(await in_Renamed.ReadAsync(buf, 0, bufsize, cancellationToken).ConfigureAwait(false));
+#endif
+				}
+				return count - z.avail_out;
 			}
-			while (Step(count));
-			return count - z.avail_out;
+			finally { z.next_out = null; z.next_out_index = z.avail_out = 0; }
 		}
 
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER
@@ -189,13 +207,14 @@ namespace ComponentAce.Compression.Libs.zlib
 		public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
 		{
 			if (MemoryMarshal.TryGetArray((ReadOnlyMemory<byte>)buffer, out ArraySegment<byte> segment))
-				return new ValueTask<int>(ReadAsync(segment.Array!, segment.Offset, segment.Count, cancellationToken));
+				return ReadCoreAsync(segment.Array!, segment.Offset, segment.Count, cancellationToken);
 			return ReadViaPooledArrayAsync(buffer, cancellationToken);
 		}
 
 		private async ValueTask<int> ReadViaPooledArrayAsync(Memory<byte> buffer, CancellationToken cancellationToken)
 		{
 			if (disposed) throw new ObjectDisposedException(GetType().Name);
+			cancellationToken.ThrowIfCancellationRequested();
 			if (buffer.Length == 0 || finished)
 				return 0;
 
@@ -203,7 +222,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			byte[] rented = ArrayPool<byte>.Shared.Rent(count);
 			try
 			{
-				int read = await ReadAsync(rented, 0, count, cancellationToken).ConfigureAwait(false);
+				int read = await ReadCoreAsync(rented, 0, count, cancellationToken).ConfigureAwait(false);
 				rented.AsMemory(0, read).CopyTo(buffer);
 				return read;
 			}
@@ -218,9 +237,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			if (disposed)
 				return;
+			var source = in_Renamed;
 			ReleaseZlibState();
 			if (!leaveOpen)
-				await in_Renamed.DisposeAsync().ConfigureAwait(false);
+				await source.DisposeAsync().ConfigureAwait(false);
 		}
 #endif
 
@@ -256,6 +276,9 @@ namespace ComponentAce.Compression.Libs.zlib
 				finished = true;
 				return false;
 			}
+			// No input is needed while the window can still deliver decoded bytes.
+			if (err == zlibConst.Z_BUF_ERROR && !nomoreinput && z.avail_in == 0)
+				{ return z.avail_out == count; }
 			if (err == zlibConst.Z_BUF_ERROR && !compress && nomoreinput && z.avail_in == 0)
 			{
 				if (z.avail_out == count)
@@ -303,9 +326,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			if (disposing && !disposed)
 			{
+				var source = in_Renamed;
 				ReleaseZlibState();
 				if (!leaveOpen)
-					in_Renamed.Dispose();
+					source.Dispose();
 			}
 			base.Dispose(disposing);
 		}
@@ -318,6 +342,8 @@ namespace ComponentAce.Compression.Libs.zlib
 			else
 				z.inflateEnd();
 			z.free();
+			in_Renamed = Stream.Null;
+			buf = Array.Empty<byte>();
 		}
 
 		/// <inheritdoc />

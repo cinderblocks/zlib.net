@@ -1,0 +1,434 @@
+[
+  {
+    "Name": "compress/text/mem6",
+    "Milliseconds": 28.17135,
+    "AllocatedBytes": 0,
+    "Value": 170325,
+    "BufferPayloadBytes": 163840,
+    "CompressedSha256": "F700BEC85DA801FB4CC3018FCD0DEA01FB386F09550EEB0FB58DEA9BBC307EFD"
+  },
+  {
+    "Name": "compress/text/mem8",
+    "Milliseconds": 36.1745,
+    "AllocatedBytes": 0,
+    "Value": 169469,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "1DB08B9D5794CE66C73DA97A7C5796B21E1103DFD3C96B0765C989B9022BFD2D"
+  },
+  {
+    "Name": "compress/random/mem6",
+    "Milliseconds": 32.62225,
+    "AllocatedBytes": 0,
+    "Value": 1049862,
+    "BufferPayloadBytes": 163840,
+    "CompressedSha256": "6310286ADA0BB5CE806151C1F85BD4150E81D5A13802555DF552DCBAF52F089E"
+  },
+  {
+    "Name": "compress/random/mem8",
+    "Milliseconds": 17.630366666666667,
+    "AllocatedBytes": 0,
+    "Value": 1048902,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "971CAB150B3F8D9528C4C2B280EACB31F504E71DE955D046F0DF321DE91C25F3"
+  },
+  {
+    "Name": "compress/mixed/mem6",
+    "Milliseconds": 10.5295,
+    "AllocatedBytes": 0,
+    "Value": 366597,
+    "BufferPayloadBytes": 163840,
+    "CompressedSha256": "51122A5EBE918862F759E62B77C92F8DCECC23EA5A011AEE47EF5FBA5A6B5B79"
+  },
+  {
+    "Name": "compress/mixed/mem8",
+    "Milliseconds": 7.487035714285715,
+    "AllocatedBytes": 0,
+    "Value": 363985,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "086417C067144BB0FCD6C3D1F098B97C11AB9FE948B67CA653EC77BF5692BC81"
+  },
+  {
+    "Name": "compress/zeros/mem6",
+    "Milliseconds": 1.8968037735849057,
+    "AllocatedBytes": 0,
+    "Value": 1039,
+    "BufferPayloadBytes": 163840,
+    "CompressedSha256": "1E6D5D105F8EE78FD7A403ADEAC8AEF4913DC356AC3F66D3AB300309A1CA8A66"
+  },
+  {
+    "Name": "compress/zeros/mem8",
+    "Milliseconds": 1.8835796296296297,
+    "AllocatedBytes": 0,
+    "Value": 1039,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "1E6D5D105F8EE78FD7A403ADEAC8AEF4913DC356AC3F66D3AB300309A1CA8A66"
+  },
+  {
+    "Name": "compress/small/mem6",
+    "Milliseconds": 0.01622081103000811,
+    "AllocatedBytes": 0,
+    "Value": 552,
+    "BufferPayloadBytes": 163840,
+    "CompressedSha256": "3CD75D541073BDB3F917AF0AE7919CA9A2B195C47B8E560DF618D37E495D6459"
+  },
+  {
+    "Name": "compress/small/mem8",
+    "Milliseconds": 0.02172994350282486,
+    "AllocatedBytes": 0,
+    "Value": 552,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "3CD75D541073BDB3F917AF0AE7919CA9A2B195C47B8E560DF618D37E495D6459"
+  },
+  {
+    "Name": "compress/empty/mem6",
+    "Milliseconds": 0.0026178403141361253,
+    "AllocatedBytes": 0,
+    "Value": 8,
+    "BufferPayloadBytes": 163840,
+    "CompressedSha256": "ACA503DEF43DC086A5AAA5C3D6F86BCBBC2AA6A80007DDEA4A81BCE2B376FCEB"
+  },
+  {
+    "Name": "compress/empty/mem8",
+    "Milliseconds": 0.008483500169664066,
+    "AllocatedBytes": 0,
+    "Value": 8,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "ACA503DEF43DC086A5AAA5C3D6F86BCBBC2AA6A80007DDEA4A81BCE2B376FCEB"
+  },
+  {
+    "Name": "level/text/0",
+    "Milliseconds": 0.22841438356164384,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "24C6617A3672C96F7B78ABEB67CA9946839C7BC0B5BBDE40B27E05659DE50338"
+  },
+  {
+    "Name": "level/text/1",
+    "Milliseconds": 5.788827777777778,
+    "AllocatedBytes": 0,
+    "Value": 242743,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "075F4F8CB420769EC7B1CAC44EB3D75AD82E17DE6EAA2B7823B07D9783711EB8"
+  },
+  {
+    "Name": "level/text/9",
+    "Milliseconds": 66.29675,
+    "AllocatedBytes": 0,
+    "Value": 165800,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "314600269C1989318B9E45B99AD9EFE500ED0C1126807AA7134E028B8D7E857D"
+  },
+  {
+    "Name": "level/random/0",
+    "Milliseconds": 0.22783302961275625,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "7FD2C5CAA9BD2E9DA3D235D09DE446AB42503BEEE529D5B0F9FBD3AFF2A253AE"
+  },
+  {
+    "Name": "level/random/1",
+    "Milliseconds": 17.003383333333336,
+    "AllocatedBytes": 0,
+    "Value": 1048902,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "FFC183BEA903CB8ADCB11A36B54DFB2C10DC6699756E1F81FC99618DA54CF980"
+  },
+  {
+    "Name": "level/random/9",
+    "Milliseconds": 17.21215,
+    "AllocatedBytes": 0,
+    "Value": 1048902,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "268F37C1CCF3BB8184A8F9373F52680A002628C2C0D37A0065EF28CA968F1D00"
+  },
+  {
+    "Name": "level/zeros/0",
+    "Milliseconds": 0.22664502262443437,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "07DAB57560B8903CF096CA051C9DDFDB38699118EB5A219175B762EC9980AB7D"
+  },
+  {
+    "Name": "level/zeros/1",
+    "Milliseconds": 0.34061326530612246,
+    "AllocatedBytes": 0,
+    "Value": 4596,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "CAA6D067B96D75104E43D699E13C9C074894F4B06A26821113FB583A09E07A06"
+  },
+  {
+    "Name": "level/zeros/9",
+    "Milliseconds": 1.95815,
+    "AllocatedBytes": 0,
+    "Value": 1039,
+    "BufferPayloadBytes": 262144,
+    "CompressedSha256": "37257DBEF64AB8CA114954698C3D54957BBF7BDE74C8D86FFC5DDE980767F746"
+  },
+  {
+    "Name": "inflate/text/single/4096",
+    "Milliseconds": 1.1508839080459772,
+    "AllocatedBytes": 62040,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/text/single/65536",
+    "Milliseconds": 1.0394742268041237,
+    "AllocatedBytes": 62040,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/text/many/4096",
+    "Milliseconds": 1.4753779411764705,
+    "AllocatedBytes": 62040,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/text/many/65536",
+    "Milliseconds": 1.4495623188405797,
+    "AllocatedBytes": 62040,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/random/single/4096",
+    "Milliseconds": 0.13832060857538034,
+    "AllocatedBytes": 41616,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/random/single/65536",
+    "Milliseconds": 0.15781606299212597,
+    "AllocatedBytes": 41616,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/random/many/4096",
+    "Milliseconds": 0.14390589928057554,
+    "AllocatedBytes": 41696,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/random/many/65536",
+    "Milliseconds": 0.13632711171662124,
+    "AllocatedBytes": 41696,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/zeros/single/4096",
+    "Milliseconds": 0.2631794736842105,
+    "AllocatedBytes": 62040,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/zeros/single/65536",
+    "Milliseconds": 0.2483104218362283,
+    "AllocatedBytes": 62040,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/zeros/many/4096",
+    "Milliseconds": 0.3883186046511628,
+    "AllocatedBytes": 62040,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/zeros/many/65536",
+    "Milliseconds": 0.3899976653696498,
+    "AllocatedBytes": 62040,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "flush/group1",
+    "Milliseconds": 0.467496261682243,
+    "AllocatedBytes": 31640,
+    "Value": 3431,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "flush/group10",
+    "Milliseconds": 0.4170658333333333,
+    "AllocatedBytes": 28224,
+    "Value": 1887,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "flush/group100",
+    "Milliseconds": 0.40776341463414634,
+    "AllocatedBytes": 28432,
+    "Value": 1719,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/text/level0/array",
+    "Milliseconds": 0.24974014962593516,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/text/level0/span",
+    "Milliseconds": 0.2729937329700272,
+    "AllocatedBytes": 0,
+    "Value": 1048747,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/text/level6/array",
+    "Milliseconds": 27.062875,
+    "AllocatedBytes": 0,
+    "Value": 169469,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/text/level6/span",
+    "Milliseconds": 26.46875,
+    "AllocatedBytes": 0,
+    "Value": 169469,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/random/level0/array",
+    "Milliseconds": 0.2503055,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/random/level0/span",
+    "Milliseconds": 0.2715073170731707,
+    "AllocatedBytes": 0,
+    "Value": 1048747,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/random/level6/array",
+    "Milliseconds": 16.792833333333334,
+    "AllocatedBytes": 0,
+    "Value": 1048902,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/random/level6/span",
+    "Milliseconds": 16.770533333333333,
+    "AllocatedBytes": 0,
+    "Value": 1048902,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/small/level0/array",
+    "Milliseconds": 0.008277692244019533,
+    "AllocatedBytes": 0,
+    "Value": 2059,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/small/level0/span",
+    "Milliseconds": 0.00833662054018006,
+    "AllocatedBytes": 0,
+    "Value": 2059,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/small/level6/array",
+    "Milliseconds": 0.021383151592901432,
+    "AllocatedBytes": 0,
+    "Value": 552,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/small/level6/span",
+    "Milliseconds": 0.02142006853715999,
+    "AllocatedBytes": 0,
+    "Value": 552,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "decode-direct/stored/wrapped/4096",
+    "Milliseconds": 0.12102503022974606,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "decode-direct/stored/raw/4096",
+    "Milliseconds": 0.039195807210031346,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "decode-direct/stored/wrapped/65536",
+    "Milliseconds": 0.10816205405405405,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "decode-direct/stored/raw/65536",
+    "Milliseconds": 0.03481681169509224,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "decode-direct/stored/wrapped/1048576",
+    "Milliseconds": 0.11474128440366972,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "decode-direct/stored/raw/1048576",
+    "Milliseconds": 0.031008837209302326,
+    "AllocatedBytes": 0,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  }
+]

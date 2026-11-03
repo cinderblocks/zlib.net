@@ -1,0 +1,98 @@
+[
+  {
+    "Name": "write/text/level0/array",
+    "Milliseconds": 0.24916616915422884,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/text/level0/span",
+    "Milliseconds": 0.2820061971830986,
+    "AllocatedBytes": 0,
+    "Value": 1048747,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/text/level6/array",
+    "Milliseconds": 28.23525,
+    "AllocatedBytes": 0,
+    "Value": 169469,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/text/level6/span",
+    "Milliseconds": 26.850775,
+    "AllocatedBytes": 0,
+    "Value": 169469,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/random/level0/array",
+    "Milliseconds": 0.283757790368272,
+    "AllocatedBytes": 0,
+    "Value": 1048742,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/random/level0/span",
+    "Milliseconds": 0.34164368600682593,
+    "AllocatedBytes": 0,
+    "Value": 1048747,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/random/level6/array",
+    "Milliseconds": 22.6072,
+    "AllocatedBytes": 0,
+    "Value": 1048902,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/random/level6/span",
+    "Milliseconds": 24.6008,
+    "AllocatedBytes": 0,
+    "Value": 1048902,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/small/level0/array",
+    "Milliseconds": 0.010420316732652635,
+    "AllocatedBytes": 0,
+    "Value": 2059,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/small/level0/span",
+    "Milliseconds": 0.009008440681019728,
+    "AllocatedBytes": 0,
+    "Value": 2059,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/small/level6/array",
+    "Milliseconds": 0.021433411915988,
+    "AllocatedBytes": 0,
+    "Value": 552,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "write/small/level6/span",
+    "Milliseconds": 0.021805713039686002,
+    "AllocatedBytes": 0,
+    "Value": 552,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  }
+]

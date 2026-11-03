@@ -1,0 +1,98 @@
+[
+  {
+    "Name": "inflate/text/single/4096",
+    "Milliseconds": 0.9006598214285715,
+    "AllocatedBytes": 11896,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/text/single/65536",
+    "Milliseconds": 0.9084684684684685,
+    "AllocatedBytes": 11896,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/text/many/4096",
+    "Milliseconds": 1.107408791208791,
+    "AllocatedBytes": 11896,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/text/many/65536",
+    "Milliseconds": 1.1615908045977013,
+    "AllocatedBytes": 11896,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/random/single/4096",
+    "Milliseconds": 0.1296128238341969,
+    "AllocatedBytes": 8824,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/random/single/65536",
+    "Milliseconds": 0.14200212765957448,
+    "AllocatedBytes": 8824,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/random/many/4096",
+    "Milliseconds": 0.13101924083769634,
+    "AllocatedBytes": 8904,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/random/many/65536",
+    "Milliseconds": 0.13297277556440903,
+    "AllocatedBytes": 8904,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/zeros/single/4096",
+    "Milliseconds": 0.2513854271356784,
+    "AllocatedBytes": 11896,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/zeros/single/65536",
+    "Milliseconds": 0.2301887356321839,
+    "AllocatedBytes": 11896,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/zeros/many/4096",
+    "Milliseconds": 0.3563679715302491,
+    "AllocatedBytes": 11896,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  },
+  {
+    "Name": "inflate/zeros/many/65536",
+    "Milliseconds": 0.3507590909090909,
+    "AllocatedBytes": 11896,
+    "Value": 1048576,
+    "BufferPayloadBytes": 0,
+    "CompressedSha256": ""
+  }
+]

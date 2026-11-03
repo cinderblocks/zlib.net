@@ -1,0 +1,2 @@
+# Unified diffs preserve legacy source whitespace as data, including context prefixes.
+benchmarks/zlib.net.Algorithm.Perf/experiments/*.patch -whitespace

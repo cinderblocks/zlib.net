@@ -47,7 +47,15 @@ namespace zlib.net.Tests
                     for (int off = 0; off < input.Length; off += chunk)
                         zout.Write(input, off, Math.Min(chunk, input.Length - off));
             }
-            return $"{ms.Length}:{Hash(ms.ToArray())}";
+            byte[] packed = ms.ToArray();
+#if NET8_0_OR_GREATER
+            using (var decoder = new System.IO.Compression.ZLibStream(new MemoryStream(packed), System.IO.Compression.CompressionMode.Decompress))
+            using (var actual = new MemoryStream())
+            {
+                decoder.CopyTo(actual); Assert.Equal(Inputs[name], actual.ToArray());
+            }
+#endif
+            return $"{ms.Length}:{Hash(packed)}";
         }
 
         public static IEnumerable<object[]> Cases()
@@ -65,9 +73,10 @@ namespace zlib.net.Tests
             ["mixed/L0/c0"] = "250041:e7be476677d8b23c7d13dd9b",
             ["mixed/L1/c0"] = "92447:1e69026eaf64c46e43d921dd",
             ["mixed/L1/c4097"] = "92447:1e69026eaf64c46e43d921dd",
-            ["mixed/L4/c0"] = "91956:a4c79a169dd3c72aea5aa08e",
-            ["mixed/L6/c0"] = "91939:c21fbe1a3d142b935020b449",
-            ["mixed/L9/c0"] = "91803:0859bfc7e8f0c09bd1222a74",
+            // Reviewed block-boundary change: removing TRUNCATE_BLOCK reduces these three sizes.
+            ["mixed/L4/c0"] = "91740:4927fdea8f5a28e28a8f7a1e",
+            ["mixed/L6/c0"] = "91726:380c48579dc133bd11c110a8",
+            ["mixed/L9/c0"] = "91591:4b963a293b49eab896b34c51",
             ["period3/L0/c0"] = "100021:907b8ba41dbe937a5a5988a7",
             ["period3/L1/c0"] = "464:adb021d3696ac196ab055b1a",
             ["period3/L4/c0"] = "123:55f2df52b1dd18360626ecdb",

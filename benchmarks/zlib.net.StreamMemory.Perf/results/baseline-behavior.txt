@@ -1,0 +1,23 @@
+.NET 8.0.28; Microsoft Windows 10.0.26200; Arm64
+compress/empty: 0.0134 ms, 285248 B/op, result=8
+compress/2KiB: 0.0349 ms, 285248 B/op, result=1335
+compress/1MiB-array: 21.5725 ms, 293488 B/op, result=693817
+compress/1MiB-span: 21.7003 ms, 293488 B/op, result=693817
+inflate/fixed-small: 0.0012 ms, 59112 B/op, result=7
+inflate/fixed-10000-empty-blocks: 0.3432 ms, 2138904 B/op, result=0
+inflate/fixed-one-empty-block: 0.0013 ms, 59112 B/op, result=0
+inflate/dynamic-many-blocks: 5.4106 ms, 526250 B/op, result=1048576
+inflate/stored: 0.1390 ms, 58904 B/op, result=1048576
+inflate/zeros-sync: 0.2413 ms, 62544 B/op, result=1048576
+inflate/text-sync: 5.1431 ms, 241482 B/op, result=1048576
+inflate/zeros-memory-async: 0.2476 ms, 81048 B/op, result=1048576
+inflate/zeros-array-async: 0.2463 ms, 81048 B/op, result=1048576
+flush/100-messages: 0.5652 ms, 288224 B/op, result=2638
+retained/caller-input=True
+retained/caller-output=True
+retained/disposed-source=True
+latency/decoded-before-trailer-read=17029
+flush/visible-message-bytes=0
+state/CanWrite-after-Finish=True
+state/CanWrite-after-End=True
+cancellation/empty-read=ignored

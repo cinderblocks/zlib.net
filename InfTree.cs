@@ -82,7 +82,16 @@ namespace ComponentAce.Compression.Libs.zlib
 		// If BMAX needs to be larger than 16, then h and x[] should be uLong.
 		internal const int BMAX = 15; // maximum bit length of any code
 		
-		internal static int huft_build(int[] b, int bindex, int n, int s, int[] d, int[] e, int[] t, int[] m, int[] hp, int[] hn, int[] v)
+		// Owned by one inflate stream; never shared between concurrent decoders.
+		internal sealed class Workspace
+		{
+			internal readonly int[] Counts = new int[BMAX + 1], Stack = new int[BMAX], Offsets = new int[BMAX + 1];
+			internal readonly int[] Values = new int[288];
+			internal readonly int[] Used = new int[1];
+			internal readonly int[] LiteralBits = new int[1], DistanceBits = new int[1], LiteralTable = new int[1], DistanceTable = new int[1];
+		}
+
+		internal static int huft_build(int[] b, int bindex, int n, int s, int[] d, int[] e, int[] t, int[] m, int[] hp, int[] hn, int[] v, Workspace work)
 		{
 			// Given a list of code lengths and a maximum table size, make a set of
 			// tables to decode that set of codes.  Return Z_OK on success, Z_BUF_ERROR
@@ -91,7 +100,10 @@ namespace ComponentAce.Compression.Libs.zlib
 			// lengths), or Z_MEM_ERROR if not enough memory.
 			
 			int a; // counter for codes of length k
-			int[] c = new int[BMAX + 1]; // bit length count table
+			int[] c = work.Counts;
+			Array.Clear(c, 0, c.Length);
+			int[] u = work.Stack;
+			int[] x = work.Offsets;
 			int f; // i repeats in table every f entries
 			int g; // maximum code length
 			int h; // table level
@@ -102,10 +114,9 @@ namespace ComponentAce.Compression.Libs.zlib
 			int mask; // (1 << w) - 1, to avoid cc -O bug on HP
 			int p; // pointer into c[], b[], or v[]
 			int q; // points to current table
-			int[] r = new int[3]; // table entry for structure assignment
-			int[] u = new int[BMAX]; // table stack
+			int entryOperation = 0, entryBits = 0, entryValue = 0;
 			int w; // bits before this table == (l * h)
-			int[] x = new int[BMAX + 1]; // bit offsets, then code stack
+			// Each used stack slot and offset is assigned before it is read below.
 			int xp; // pointer into x
 			int y; // number of dummy codes added
 			int z; // number of entries in current table
@@ -241,11 +252,14 @@ namespace ComponentAce.Compression.Libs.zlib
 						if (h != 0)
 						{
 							x[h] = i; // save pattern for backing up
-							r[0] = (byte) j; // bits in this table
-							r[1] = (byte) l; // bits to dump before this table
+							entryOperation = (byte) j; // bits in this table
+							entryBits = (byte) l; // bits to dump before this table
 							j = SupportClass.URShift(i, (w - l));
-							r[2] = q - u[h - 1] - j; // offset to this table
-							Array.Copy(r, 0, hp, (u[h - 1] + j) * 3, 3); // connect to last table
+							entryValue = q - u[h - 1] - j; // offset to this table
+							int link = (u[h - 1] + j) * 3;
+							hp[link] = entryOperation;
+							hp[link + 1] = entryBits;
+							hp[link + 2] = entryValue;
 						}
 						else
 						{
@@ -254,27 +268,30 @@ namespace ComponentAce.Compression.Libs.zlib
 					}
 					
 					// set up table entry in r
-					r[1] = (byte) (k - w);
+					entryBits = (byte) (k - w);
 					if (p >= n)
 					{
-						r[0] = 128 + 64; // out of values--invalid code
+						entryOperation = 128 + 64; // out of values--invalid code
 					}
 					else if (v[p] < s)
 					{
-						r[0] = (byte) (v[p] < 256?0:32 + 64); // 256 is end-of-block
-						r[2] = v[p++]; // simple code is just the value
+						entryOperation = (byte) (v[p] < 256?0:32 + 64); // 256 is end-of-block
+						entryValue = v[p++]; // simple code is just the value
 					}
 					else
 					{
-						r[0] = (byte) (e[v[p] - s] + 16 + 64); // non-simple--look up in lists
-						r[2] = d[v[p++] - s];
+						entryOperation = (byte) (e[v[p] - s] + 16 + 64); // non-simple--look up in lists
+						entryValue = d[v[p++] - s];
 					}
 					
 					// fill code-like entries with r
 					f = 1 << (k - w);
 					for (j = SupportClass.URShift(i, w); j < z; j += f)
 					{
-						Array.Copy(r, 0, hp, (q + j) * 3, 3);
+						int entry = (q + j) * 3;
+						hp[entry] = entryOperation;
+						hp[entry + 1] = entryBits;
+						hp[entry + 2] = entryValue;
 					}
 					
 					// backwards increment the k-bit code i
@@ -298,13 +315,13 @@ namespace ComponentAce.Compression.Libs.zlib
 			return y != 0 && g != 1?Z_BUF_ERROR:Z_OK;
 		}
 		
-		internal static int inflate_trees_bits(int[] c, int[] bb, int[] tb, int[] hp, ZStream z)
+		internal static int inflate_trees_bits(int[] c, int[] bb, int[] tb, int[] hp, ZStream z, Workspace work)
 		{
 			int r;
-			int[] hn = new int[1]; // hufts used in space
-			int[] v = new int[19]; // work area for huft_build 
+			int[] hn = work.Used; hn[0] = 0; // hufts used in space
+			int[] v = work.Values;
 			
-			r = huft_build(c, 0, 19, 19, null, null, tb, bb, hp, hn, v);
+			r = huft_build(c, 0, 19, 19, null, null, tb, bb, hp, hn, v, work);
 			
 			if (r == Z_DATA_ERROR)
 			{
@@ -318,14 +335,14 @@ namespace ComponentAce.Compression.Libs.zlib
 			return r;
 		}
 		
-		internal static int inflate_trees_dynamic(int nl, int nd, int[] c, int[] bl, int[] bd, int[] tl, int[] td, int[] hp, ZStream z)
+		internal static int inflate_trees_dynamic(int nl, int nd, int[] c, int[] bl, int[] bd, int[] tl, int[] td, int[] hp, ZStream z, Workspace work)
 		{
 			int r;
-			int[] hn = new int[1]; // hufts used in space
-			int[] v = new int[288]; // work area for huft_build
+			int[] hn = work.Used; hn[0] = 0; // hufts used in space
+			int[] v = work.Values;
 			
 			// build literal/length tree
-			r = huft_build(c, 0, nl, 257, cplens, cplext, tl, bl, hp, hn, v);
+			r = huft_build(c, 0, nl, 257, cplens, cplext, tl, bl, hp, hn, v, work);
 			if (r != Z_OK || bl[0] == 0)
 			{
 				if (r == Z_DATA_ERROR)
@@ -341,7 +358,7 @@ namespace ComponentAce.Compression.Libs.zlib
 			}
 			
 			// build distance tree
-			r = huft_build(c, nl, nd, 0, cpdist, cpdext, td, bd, hp, hn, v);
+			r = huft_build(c, nl, nd, 0, cpdist, cpdext, td, bd, hp, hn, v, work);
 			
 			if (r != Z_OK || (bd[0] == 0 && nl > 257))
 			{

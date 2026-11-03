@@ -100,6 +100,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		private bool syncing, headerRead, recovered;
 		
 		// mode independent information
+		private int configuredNowrap;
 		internal int nowrap; // flag for no wrapper
 		internal int wbits; // log2(window size)  (8..15, defaults to 15)
 		
@@ -113,6 +114,9 @@ namespace ComponentAce.Compression.Libs.zlib
 			z.total_in = z.total_out = 0;
 			z.msg = null;
 			z.istate.syncing = z.istate.headerRead = z.istate.recovered = false;
+			z.istate.nowrap = z.istate.configuredNowrap;
+			z.istate.marker = 0;
+			z.istate.blocks.checkfn = z.istate.nowrap != 0 ? null : z.istate;
 			z.istate.mode = z.istate.nowrap != 0?BLOCKS:METHOD;
 			z.istate.blocks.reset(z, null);
 			return Z_OK;
@@ -147,6 +151,7 @@ namespace ComponentAce.Compression.Libs.zlib
 				return Z_STREAM_ERROR;
 			}
 			wbits = w;
+			configuredNowrap = nowrap;
 			
 			z.istate.blocks = new InfBlocks(z, z.istate.nowrap != 0?null:this, 1 << w);
 			

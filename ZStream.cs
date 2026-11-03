@@ -123,6 +123,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			return istate == null ? Z_STREAM_ERROR : Inflate.inflate(this, f);
 		}
+		/// <summary>Starts an independent stream with the same decompression options, reusing allocated workspace.</summary>
+		/// <remarks>Discards unfinished data and resets counters and dictionary history. Set input/output fields for the new stream.</remarks>
+		public int inflateReset() => istate?.blocks == null ? Z_STREAM_ERROR : Inflate.inflateReset(this);
+
 		/// <summary>Releases the decompression state.</summary>
 		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int inflateEnd()
@@ -156,8 +160,16 @@ namespace ComponentAce.Compression.Libs.zlib
 		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateInit(int level, int bits)
 		{
+			return deflateInit(level, bits, 8);
+		}
+		/// <summary>Initializes compression with a window size and memory level (1-9, default 8).</summary>
+		/// <remarks>Smaller memory levels reduce hash and symbol buffers but can change speed and compression ratio.
+		/// Negative window bits select raw DEFLATE. The history window size is independent of the memory level.</remarks>
+		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
+		public int deflateInit(int level, int bits, int memoryLevel)
+		{
 			dstate = new Deflate();
-			return dstate.deflateInit(this, level, bits);
+			return dstate.deflateInit2(this, level, 8, bits, memoryLevel, 0);
 		}
 		/// <summary>Compresses as much data as possible from <see cref="next_in"/> into <see cref="next_out"/>.</summary>
 		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
@@ -165,6 +177,10 @@ namespace ComponentAce.Compression.Libs.zlib
 		{
 			return dstate?.deflate(this, flush) ?? Z_STREAM_ERROR;
 		}
+		/// <summary>Starts an independent stream with the same compression options, reusing allocated buffers.</summary>
+		/// <remarks>Discards unfinished data and resets counters and dictionaries. Set input/output fields for the new stream.</remarks>
+		public int deflateReset() => dstate?.pending_buf == null ? Z_STREAM_ERROR : dstate.deflateReset(this);
+
 		/// <summary>Releases the compression state.</summary>
 		/// <returns>A <c>Z_*</c> status code from <see cref="zlibConst"/>.</returns>
 		public int deflateEnd()
@@ -226,7 +242,7 @@ namespace ComponentAce.Compression.Libs.zlib
 		// this function so some applications may wish to modify it to avoid
 		// allocating a large strm->next_in buffer and copying from it.
 		// (See also flush_pending()).
-		internal int read_buf(byte[] buf, int start, int size)
+		internal int read_buf(byte[] buf, int start, int size, in DeflateInput input)
 		{
 			int len = avail_in;
 			
@@ -237,11 +253,11 @@ namespace ComponentAce.Compression.Libs.zlib
 			
 			avail_in -= len;
 			
+			input.CopyTo(next_in_index, buf, start, len);
 			if (dstate!.noheader == 0)
 			{
-				adler = Adler32.adler32(adler, next_in, next_in_index, len);
+				adler = Adler32.adler32(adler, buf, start, len);
 			}
-			Array.Copy(next_in!, next_in_index, buf, start, len);
 			next_in_index += len;
 			total_in += len;
 			return len;
